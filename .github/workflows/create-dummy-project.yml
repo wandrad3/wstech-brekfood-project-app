@@ -1,0 +1,57 @@
+name: Criar novo repositório Java
+
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  create-repo:
+    if: contains(github.event.issue.labels.*.name, 'new-project')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Extrair dados da issue
+        id: parse
+        run: |
+          BODY="${{ github.event.issue.body }}"
+    
+          BODY="${{ github.event.issue.body }}"
+
+          get_field() {
+            echo "$BODY" | awk -v field="$1" '
+            $0 ~ "### " field {
+            # Continua lendo até achar uma linha não vazia
+              while (getline > 0) {
+                if ($0 !~ /^$/) {
+                  gsub(/^[ \t]+|[ \t]+$/, "", $0); # trim
+                  print $0;
+                  exit;
+                }
+              }
+            }      '
+          }
+
+          PROJECT_NAME=$(get_field "Nome do Projeto")
+          PROJECT_DESCRIPTION=$(get_field "Descrição")
+          DATABASE=$(get_field "Banco de Dados")
+
+          echo "PROJECT_NAME=$PROJECT_NAME" >> $GITHUB_ENV
+          echo "PROJECT_DESCRIPTION=$PROJECT_DESCRIPTION" >> $GITHUB_ENV
+          echo "DATABASE=$DATABASE" >> $GITHUB_ENV
+      
+      - name: Criar novo repositório no GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          gh repo create "${{ env.PROJECT_NAME }}" \
+          --description "${{ env.PROJECT_DESCRIPTION }}" \
+          --public \
+          --template wandrad3/wstech-base-project
+
+      - name: Adicionar comentário na issue
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+          --repo ${{ github.repository }} \
+          --body "✅ Repositório [${{ env.PROJECT_NAME }}](https://github.com/wandrad3/${{ env.PROJECT_NAME }}) criado com sucesso!"

@@ -1,0 +1,34 @@
+name: "Novo Projeto Java"
+description: "Cria um repositório dummy baseado no template Java"
+title: "[Novo Projeto] - "
+labels: ["new-project"]
+
+body:
+  - type: input
+    id: project_name
+    attributes:
+      label: Nome do Projeto
+      description: Informe o nome do repositório que será criado
+      placeholder: "ex: api-clientes"
+    validations:
+      required: true
+
+  - type: input
+    id: project_description
+    attributes:
+      label: Descrição
+      description: Informe uma descrição curta para o projeto
+      placeholder: Sistema de CRUD de clientes
+    validations:
+      required: true
+
+  - type: dropdown
+    id: database
+    attributes:
+      label: Banco de Dados
+      options:
+        - PostgreSQL
+        - MySQL
+        - H2 (memória)
+    validations:
+      required: true

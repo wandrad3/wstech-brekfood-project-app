@@ -1,0 +1,8 @@
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.5-brightgreen?logo=springboot)
+![Java](https://img.shields.io/badge/Java-17-blue?logo=openjdk)
+![Maven](https://img.shields.io/badge/Maven-3.9.6-C71A36?logo=apachemaven)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15.6-336791?logo=postgresql)
+![Lombok](https://img.shields.io/badge/Lombok-1.18.32-red?logo=lombok)
+![JaCoCo](https://img.shields.io/badge/JaCoCo-0.8.12-yellow?logo=jacoco)
+![Spring Security](https://img.shields.io/badge/Spring_Security-6.2.4-6DB33F?logo=springsecurity)
+![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-3.2.5-6DB33F?logo=spring)
