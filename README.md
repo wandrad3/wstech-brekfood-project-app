@@ -106,14 +106,15 @@ score = w1×proximity + w2×idle_time + w3×earnings_gap + w4×acceptance_probab
 | Runtime       | Java 17                       | ✅ Active     |
 | Framework     | Spring Boot 3.5.5             | ✅ Active     |
 | Persistence   | Spring Data JPA + PostgreSQL  | ✅ Active     |
-| Security      | Spring Security 6             | 🔜 Phase 1   |
+| Security      | Spring Security 6 + JJWT 0.12.6 | 🔜 Phase 1  |
 | Build         | Maven + mvnw                  | ✅ Active     |
 | Coverage      | JaCoCo 0.8.12                 | ✅ Active     |
+| Validation    | Bean Validation (Jakarta)     | ✅ Active     |
+| DTO Mapping   | MapStruct 1.6.3               | ✅ Configured |
+| Migration     | Flyway 10.x                   | ✅ Active     |
+| API Docs      | SpringDoc OpenAPI 2.8.8       | ✅ Active     |
 | Test DB       | H2 (in-memory, test profile)  | ✅ Active     |
-| Migration     | Flyway                        | 🔜 Phase 0.2 |
-| API Docs      | SpringDoc OpenAPI             | 🔜 Phase 0.2 |
-| JWT           | JJWT                          | 🔜 Phase 1   |
-| Messaging     | Spring Kafka                  | 🔜 Phase 3   |
+| Int. Tests    | Testcontainers + PostgreSQL   | ✅ Configured |
 | Containers    | Docker + Compose              | 🔜 Phase 0.4 |
 
 ---
@@ -131,6 +132,15 @@ score = w1×proximity + w2×idle_time + w3×earnings_gap + w4×acceptance_probab
 ```bash
 ./mvnw clean test "-Dspring.profiles.active=test"
 ```
+
+> Tests run against H2 in-memory. Flyway is disabled in the test profile.
+> Integration tests (extending `AbstractIntegrationTest`) spin up a real PostgreSQL 15 container via Testcontainers.
+
+### API Documentation
+
+With the app running, access:
+- Swagger UI: http://localhost:8080/swagger-ui.html
+- OpenAPI JSON: http://localhost:8080/api-docs
 
 ### Running Locally
 

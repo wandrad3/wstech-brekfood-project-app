@@ -1,6 +1,6 @@
 # BrekFood - TODO Tracker
 
-> Last updated: 2026-03-31 (Phase 0.1 complete)
+> Last updated: 2026-03-31 (Phase 0.2 complete)
 > Legend: `[ ]` pending | `[~]` in progress | `[x]` done | `[!]` blocked
 
 ---
@@ -15,20 +15,20 @@
 - [x] Update README.md with BrekFood branding and project description
 
 ### 0.2 Dependencies to Add
-- [ ] Add Flyway for database migrations (`flyway-core` + `flyway-database-postgresql`)
-- [ ] Add SpringDoc OpenAPI (`springdoc-openapi-starter-webmvc-ui`)
-- [ ] Add Bean Validation (`spring-boot-starter-validation`)
-- [ ] Add MapStruct for DTO mapping (`mapstruct` + `mapstruct-processor`)
-- [ ] Add JJWT for JWT handling (`jjwt-api`, `jjwt-impl`, `jjwt-jackson`)
-- [ ] Add Testcontainers for integration tests (`testcontainers`, `postgresql`)
+- [x] Add Flyway for database migrations (`flyway-core` + `flyway-database-postgresql`)
+- [x] Add SpringDoc OpenAPI (`springdoc-openapi-starter-webmvc-ui` 2.8.8)
+- [x] Add Bean Validation (`spring-boot-starter-validation`)
+- [x] Add MapStruct for DTO mapping (`mapstruct` 1.6.3 + `mapstruct-processor` + `lombok-mapstruct-binding`)
+- [x] Add JJWT for JWT handling (`jjwt-api`, `jjwt-impl`, `jjwt-jackson` 0.12.6)
+- [x] Add Testcontainers for integration tests (`spring-boot-testcontainers`, `junit-jupiter`, `postgresql`)
 - [x] Add H2 for lightweight dev/test profile
 
 ### 0.3 Configuration
 - [ ] Configure `application.properties` (or `.yml`) for PostgreSQL connection
 - [ ] Create `application-dev.properties` profile
 - [x] Create `application-test.properties` profile
-- [ ] Configure Flyway migration directory (`db/migration`)
-- [ ] Configure SpringDoc OpenAPI info (title, version, description)
+- [x] Configure Flyway migration directory (`db/migration`) — `V0__baseline.sql` criado
+- [x] Configure SpringDoc OpenAPI info (title, version, description) — `OpenApiConfig`
 - [ ] Configure JaCoCo minimum coverage thresholds
 
 ### 0.4 Infrastructure
@@ -420,4 +420,10 @@ Phase 2 (Customer)      Phase 3 (Restaurant)
 | 2026-03-31 | Created Shared Kernel: BaseEntity, DomainException hierarchy, GlobalExceptionHandler, ApiResponse, ApiError, JpaConfig, WebConfig |
 | 2026-03-31 | Test profile configured with H2 in-memory — no PostgreSQL needed for tests |
 | 2026-03-31 | 18 unit tests passing (BUILD SUCCESS)                                      |
+| 2026-03-31 | **Phase 0.2 COMPLETE** — All Phase 0.2 dependencies added and configured    |
+| 2026-03-31 | Added: Flyway, SpringDoc OpenAPI 2.8.8, Bean Validation, MapStruct 1.6.3, JJWT 0.12.6, Testcontainers |
+| 2026-03-31 | Created: OpenApiConfig (JWT Bearer scheme + 8 API tags), JwtProperties (validated @ConfigurationProperties) |
+| 2026-03-31 | Created: AbstractIntegrationTest (Testcontainers PostgreSQL base class) |
+| 2026-03-31 | Created: Flyway migration dir + V0__baseline.sql |
+| 2026-03-31 | 23 unit tests passing (BUILD SUCCESS) — 5 new tests for JwtProperties validation |
 

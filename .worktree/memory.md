@@ -1,7 +1,7 @@
 # BrekFood - Memory & Context Document
 
 > Last updated: 2026-03-31
-> Status: **Phase 0.1 Complete — Shared Kernel bootstrapped, 18 tests passing**
+> Status: **Phase 0.2 Complete — 23 tests passing, full dependency stack configured**
 
 ---
 
@@ -27,34 +27,29 @@
 
 ## 2. Current State (Snapshot)
 
-### What EXISTS today (Phase 0.1 complete):
-- `BrekFoodApplication.java` — main class in `com.br.wstech.brekfood`
-- Full DDD package skeleton: **8 bounded contexts × 4 layers** (domain / application / infrastructure / interfaces)
-- **Shared Kernel** fully implemented:
-  - `BaseEntity` — abstract UUID entity with JPA auditing (`@CreatedDate`, `@LastModifiedDate`)
-  - `DomainException` — abstract base for all domain exceptions (unchecked)
-  - `EntityNotFoundException` — 404 semantics (UUID or String identifier)
-  - `BusinessRuleViolationException` — 422 semantics
-  - `ApiResponse<T>` — standard success envelope with timestamp
-  - `ApiError` + `ApiError.FieldError` — standardized error response with field errors
-  - `GlobalExceptionHandler` — `@RestControllerAdvice` mapping all exception types
+### What EXISTS today (Phase 0.2 complete):
+- `BrekFoodApplication.java` — main class com `@ConfigurationPropertiesScan`
+- Full DDD package skeleton: **8 bounded contexts × 4 layers**
+- **Shared Kernel** completo:
+  - `BaseEntity` — abstract UUID entity com JPA auditing
+  - `DomainException` hierarchy — `EntityNotFoundException` (404), `BusinessRuleViolationException` (422)
+  - `ApiResponse<T>` / `ApiError` + `FieldError` — envelopes padronizados
+  - `GlobalExceptionHandler` — mapeia 404/422/400/500, sem vazamento de detalhes internos
   - `JpaConfig` — `@EnableJpaAuditing`
-  - `WebConfig` — CORS configurable via `brekfood.cors.allowed-origins`
-- `application.properties` — updated with `spring.application.name=brekfood`, JPA configs, CORS
-- `application-test.properties` — H2 in-memory, Flyway disabled, DDL create-drop
-- **18 unit tests passing** — exceptions, response wrappers, global handler (incl. no-internal-leak test)
-- H2 dependency added for test profile
-- `README.md` — full BrekFood branding with architecture, engines, API table, error format docs
+  - `WebConfig` — CORS via `brekfood.cors.allowed-origins`
+  - `OpenApiConfig` — SpringDoc com JWT Bearer scheme e 8 tags (uma por bounded context)
+  - `JwtProperties` — `@ConfigurationProperties` record validado com Bean Validation
+- **Flyway** configurado: `db/migration/V0__baseline.sql` criado
+- **Testcontainers**: `AbstractIntegrationTest` base class com PostgreSQL 15 container
+- `application.properties` — Flyway, SpringDoc, JWT, CORS configs
+- `application-test.properties` — H2 in-memory, Flyway desabilitado
+- **23 testes unitários passando** (5 novos: JwtProperties validação)
 
 ### What DOES NOT exist yet (upcoming phases):
-- All bounded context implementations (domain entities, services, repos, controllers)
-- Database schema & migrations (Flyway — Phase 0.2)
-- Authentication/Authorization JWT (Phase 1)
-- OpenAPI documentation (Phase 0.2)
-- MapStruct + Bean Validation (Phase 0.2)
-- Docker / docker-compose (Phase 0.4)
-- Testcontainers for integration tests (Phase 0.2)
-- Core engines: Pricing, Earnings, Dispatch (Phases 5–7)
+- Phase 0.3: `application-dev.properties`, PostgreSQL datasource config, JaCoCo thresholds
+- Phase 0.4: `docker-compose.yml`, `Dockerfile`, `.env.example`
+- Phases 1-8: Todos os bounded contexts (domain + application + infrastructure + interfaces)
+- Fases 9-10: Observabilidade, Simulação Engine
 
 ---
 
@@ -205,22 +200,22 @@ score = w1 * proximity + w2 * idle_time + w3 * earnings_gap + w4 * acceptance_pr
 
 ## 7. Technology Stack (Planned)
 
-| Layer              | Technology                        | Status     |
-|-------------------|-----------------------------------|-----------|
+| Layer              | Technology                        | Status      |
+|-------------------|-----------------------------------|------------|
 | Runtime           | Java 17                           | ✅ Active   |
 | Framework         | Spring Boot 3.5.5                 | ✅ Active   |
 | Persistence       | Spring Data JPA + PostgreSQL      | ✅ Active   |
-| Security          | Spring Security + JWT             | 🔜 Phase 1  |
+| Security          | Spring Security + JWT (JJWT 0.12.6) | 🔜 Phase 1 |
 | Build             | Maven + mvnw                      | ✅ Active   |
 | Coverage          | JaCoCo 0.8.12                     | ✅ Active   |
 | Utility           | Lombok                            | ✅ Active   |
+| DTO Mapping       | MapStruct 1.6.3                   | ✅ Configured|
+| Validation        | Bean Validation (Jakarta)         | ✅ Active   |
 | Test DB           | H2 in-memory (profile: test)      | ✅ Active   |
-| Migration         | Flyway (to add)                   | 🔜 Phase 0.2|
-| API Docs          | SpringDoc OpenAPI (to add)        | 🔜 Phase 0.2|
-| Validation        | Bean Validation (to add)          | 🔜 Phase 0.2|
-| Mapping           | MapStruct (to add)                | 🔜 Phase 0.2|
-| Containerization  | Docker + docker-compose (to add)  | 🔜 Phase 0.4|
-| Testing           | JUnit 5 + Mockito + Testcontainers | 🟡 Partial  |
+| Integration Tests | Testcontainers + PostgreSQL 15    | ✅ Configured|
+| Migration         | Flyway 10.x (Boot BOM)            | ✅ Active   |
+| API Docs          | SpringDoc OpenAPI 2.8.8           | ✅ Active   |
+| Containerization  | Docker + docker-compose           | 🔜 Phase 0.4|
 
 ---
 
