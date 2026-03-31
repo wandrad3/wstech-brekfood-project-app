@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.br.wstech</groupId>
-    <artifactId>wstech-base-project</artifactId>
+    <artifactId>brekfood-app</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>wstech-base-project</name>
-    <description>Projeto base para demais projetos java da wstech solutions</description>
+    <name>brekfood-app</name>
+    <description>BrekFood — Fairness-first delivery platform by WSTech Solutions</description>
     <url/>
     <licenses>
         <license/>
@@ -61,6 +61,11 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
