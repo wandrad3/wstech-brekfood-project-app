@@ -433,4 +433,6 @@ Phase 2 (Customer)      Phase 3 (Restaurant)
 | 2026-04-01 | 70 unit tests passing (47 new: Role×8, User×31, UserNotFoundException×6, BrekFoodApp×1, Role+User tests: parameterized with @ValueSource) |
 | 2026-04-01 | ADR: `User.create()` static factory enforces all invariants; direct field mutation only via explicit business methods |
 | 2026-04-01 | ADR: `UserRepository` is a pure Java interface (domain port) — no Spring/JPA dependency; JpaUserRepository wired in Phase 1.3 |
+| 2026-04-01 | **CI Pipeline CREATED** — `.github/workflows/ci.yml` (build → sonar → auto-PR), `sonar-project.properties`, `skills/skill-ci-pipeline.md` |
+| 2026-04-01 | CI: 3 jobs — build+JaCoCo gate, SonarCloud (coverage + CVE + code smells), auto-create PR to develop |
 

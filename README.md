@@ -253,6 +253,26 @@ Validation errors include field-level details:
 
 ---
 
+## CI/CD Pipeline
+
+Every push to `feature/**`, `hotfix/**`, or `bugfix/**` branches triggers:
+
+| Step | Job | What it does |
+|------|-----|-------------|
+| 1 | **Build & Test** | `mvn clean verify` — compiles, runs 70+ unit tests, enforces JaCoCo gate |
+| 2 | **SonarCloud** | Coverage upload, bug detection, CVE vulnerability scan, code smell analysis |
+| 3 | **Auto PR** | Creates/updates a Pull Request to `develop` with CI summary |
+
+### Required Setup
+
+1. **SonarCloud**: Create project at https://sonarcloud.io
+2. **GitHub Secrets**: `SONAR_TOKEN`
+3. **GitHub Variables**: `SONAR_PROJECT_KEY`, `SONAR_ORGANIZATION`
+
+> See `skills/skill-ci-pipeline.md` for full setup, troubleshooting, and branching model.
+
+---
+
 ## Project Tracking
 
 | File                          | Purpose                              |
@@ -260,6 +280,7 @@ Validation errors include field-level details:
 | `.worktree/plan.md`           | Full DDD specification & domain model |
 | `.worktree/memory.md`         | Architecture decisions & current state |
 | `.worktree/to_do.md`          | Phase-by-phase task tracker          |
+| `skills/skill-ci-pipeline.md`      | CI pipeline setup & operations  |
 | `skills/skill-stack-upgrade.md`    | Stack upgrade runbook           |
 | `skills/skill-gc-troubleshooting.md` | GC tuning & troubleshooting   |
 

@@ -236,6 +236,7 @@ score = w1 * proximity + w2 * idle_time + w3 * earnings_gap + w4 * acceptance_pr
 | Migration         | Flyway 10.x (Boot BOM)            | ✅ Active   |
 | API Docs          | SpringDoc OpenAPI 2.8.8           | ✅ Active   |
 | Containerization  | Docker + docker-compose           | ✅ Complete (Phase 0.4) |
+| CI/CD             | GitHub Actions + SonarCloud       | ✅ Complete             |
 
 ---
 

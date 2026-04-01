@@ -557,3 +557,21 @@ This is the foundation of a competitive BrekFood platform.
 | `UserNotFoundException_Test.java` | test `identity.domain.exception`                   | 6 tests: message format, exception hierarchy                          |
 | **Tests total**                 | —                                                    | **70 unit tests passing, coverage gate satisfied**                    |
 
+## 13. CI Pipeline Summary
+
+### Delivered (2026-04-01)
+
+| Artifact                                | Purpose                                                       |
+|-----------------------------------------|---------------------------------------------------------------|
+| `.github/workflows/ci.yml`              | 3-job pipeline: build → sonar → auto-PR                      |
+| `sonar-project.properties`              | SonarCloud config: sources, exclusions, coverage XML path     |
+| `skills/skill-ci-pipeline.md`           | Full operational skill: setup, troubleshooting, branching     |
+
+### Pipeline Jobs
+
+| Job        | Trigger                       | What it does                                    | Fails if                          |
+|------------|-------------------------------|-------------------------------------------------|-----------------------------------|
+| build      | Any push or PR                | `mvn clean verify` + JaCoCo gate + artifacts    | Tests fail or coverage < threshold|
+| sonar      | After build (not forks)       | SonarCloud: coverage, bugs, CVEs, code smells   | Quality Gate not met              |
+| create-pr  | Push on feature/hotfix/bugfix | Creates/updates PR → develop with CI summary    | N/A (informational)               |
+
