@@ -1,6 +1,6 @@
 # BrekFood - TODO Tracker
 
-> Last updated: 2026-04-01 (Phase 0 COMPLETE — Épico 0 encerrado)
+> Last updated: 2026-04-01 (Phase 1.1 complete — Domain Layer: User, Role, UserRepository)
 > Legend: `[ ]` pending | `[~]` in progress | `[x]` done | `[!]` blocked
 
 ---
@@ -44,9 +44,10 @@
 ## Phase 1 - Identity & Auth Context (P0)
 
 ### 1.1 Domain Layer
-- [ ] Create `User` entity (id, email, password, name, role, createdAt, updatedAt)
-- [ ] Create `Role` enum (CUSTOMER, RESTAURANT_OWNER, DRIVER, ADMIN)
-- [ ] Create `UserRepository` interface
+- [x] Create `User` entity (id, email, passwordHash, name, role, createdAt, updatedAt) — factory method, business invariants, no public setters
+- [x] Create `Role` enum (CUSTOMER, RESTAURANT_OWNER, DRIVER, ADMIN) — displayName field, stored as VARCHAR
+- [x] Create `UserRepository` interface — pure domain port (no Spring/JPA dependency)
+- [x] Create `UserNotFoundException` — context-specific exception, extends `EntityNotFoundException`
 
 ### 1.2 Application Layer
 - [ ] Create `RegisterCommand` (email, password, name, role)
@@ -428,4 +429,8 @@ Phase 2 (Customer)      Phase 3 (Restaurant)
 | 2026-04-01 | **Phase 0.3 COMPLETE** — PostgreSQL datasource config (HikariCP), `application-dev.properties`, JaCoCo thresholds (LINE 70%, BRANCH 60%, CLASS 80%) |
 | 2026-04-01 | **Phase 0.4 COMPLETE** — `docker-compose.yml` (postgres + app + healthcheck), multi-stage `Dockerfile` (layered JAR, non-root), `.env.example` |
 | 2026-04-01 | **ÉPICO 0 COMPLETE** — 23 unit tests passing, full infrastructure ready for Phase 1 |
+| 2026-04-01 | **Phase 1.1 COMPLETE** — `User` aggregate root (factory method, business methods, no public setters), `Role` enum, `UserRepository` (pure domain port), `UserNotFoundException` |
+| 2026-04-01 | 70 unit tests passing (47 new: Role×8, User×31, UserNotFoundException×6, BrekFoodApp×1, Role+User tests: parameterized with @ValueSource) |
+| 2026-04-01 | ADR: `User.create()` static factory enforces all invariants; direct field mutation only via explicit business methods |
+| 2026-04-01 | ADR: `UserRepository` is a pure Java interface (domain port) — no Spring/JPA dependency; JpaUserRepository wired in Phase 1.3 |
 

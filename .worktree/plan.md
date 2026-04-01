@@ -2,7 +2,9 @@
 
 > **Phase 0 Status: ✅ COMPLETE (2026-04-01)**
 > 23 unit tests passing | PostgreSQL + Docker infrastructure ready | JaCoCo coverage thresholds configured
-> **Next: Phase 1 — Identity & Auth Context**
+> **Phase 1.1 Status: ✅ COMPLETE (2026-04-01)**
+> 70 unit tests passing | User aggregate root, Role enum, UserRepository (domain port), UserNotFoundException
+> **Next: Phase 1.2 — Application Layer (RegisterCommand, AuthService, JwtTokenProvider)**
 
 ---
 
@@ -538,5 +540,20 @@ This is the foundation of a competitive BrekFood platform.
 | Coverage gate         | JaCoCo `check` goal in `pom.xml`      | LINE ≥ 70%, BRANCH ≥ 60%, CLASS ≥ 80%               |
 | Containerization      | `docker-compose.yml`, `Dockerfile`    | Multi-stage layered build, non-root runtime, healthcheck |
 | Environment template  | `.env.example`                        | Full variable reference for dev/prod                 |
-| Tests                 | 23 unit tests passing                 | Exceptions, API responses, JWT config validation      |
+| Tests (Phase 0)       | 23 unit tests passing                 | Exceptions, API responses, JWT config validation     |
+
+## 12. Phase 1.1 Completion Summary
+
+### Delivered (2026-04-01)
+
+| Artifact                        | Package                                              | Key Decisions                                                         |
+|---------------------------------|------------------------------------------------------|-----------------------------------------------------------------------|
+| `Role.java`                     | `identity.domain.model`                              | 4 values with `displayName`; stored as VARCHAR via `@Enumerated(STRING)` |
+| `User.java`                     | `identity.domain.model`                              | Aggregate root; `User.create()` factory method; no public setters; email normalized on create; `@NoArgsConstructor(PROTECTED)` for JPA only |
+| `UserNotFoundException.java`    | `identity.domain.exception`                          | Extends `EntityNotFoundException`; UUID + email constructors          |
+| `UserRepository.java`           | `identity.domain.repository`                         | Pure Java interface (domain port); 0 framework imports; JpaUserRepository in Phase 1.3 |
+| `Role_Test.java`                | test `identity.domain.model`                         | 8 tests: enum completeness, display names, valueOf/name behaviour     |
+| `User_Test.java`                | test `identity.domain.model`                         | 31 tests: factory method, all business methods, parameterized invalid inputs |
+| `UserNotFoundException_Test.java` | test `identity.domain.exception`                   | 6 tests: message format, exception hierarchy                          |
+| **Tests total**                 | —                                                    | **70 unit tests passing, coverage gate satisfied**                    |
 

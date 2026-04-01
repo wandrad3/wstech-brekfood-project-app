@@ -1,7 +1,7 @@
 # BrekFood - Memory & Context Document
 
 > Last updated: 2026-04-01
-> Status: **Phase 0 COMPLETE (Épico 0 encerrado) — 23 tests passing, full infrastructure ready**
+> Status: **Phase 1.1 Complete — 70 tests passing, User domain layer ready**
 
 ---
 
@@ -27,7 +27,7 @@
 
 ## 2. Current State (Snapshot)
 
-### What EXISTS today (Phase 0 complete — Épico 0 encerrado):
+### What EXISTS today (Phase 1.1 complete):
 - `BrekFoodApplication.java` — main class com `@ConfigurationPropertiesScan`
 - Full DDD package skeleton: **8 bounded contexts × 4 layers**
 - **Shared Kernel** completo:
@@ -41,21 +41,23 @@
   - `JwtProperties` — `@ConfigurationProperties` record validado com Bean Validation
 - **Flyway** configurado: `db/migration/V0__baseline.sql` criado
 - **Testcontainers**: `AbstractIntegrationTest` base class com PostgreSQL 15 container
-- **Configuration** completa:
-  - `application.properties` — PostgreSQL datasource (HikariCP pool, env vars), Flyway, SpringDoc, JWT, CORS
-  - `application-dev.properties` — verbose logging, Flyway repair, multi-origin CORS
-  - `application-test.properties` — H2 in-memory, Flyway desabilitado
-- **JaCoCo** — check goal com LINE ≥ 70%, BRANCH ≥ 60%, CLASS ≥ 80%; exclusions para skeleton packages
-- **Infrastructure** completa:
-  - `docker-compose.yml` — serviços postgres + app com healthcheck + rede dedicada + volume persistente
-  - `Dockerfile` — multi-stage build (builder + runtime), layered JAR, non-root user, JAVA_OPTS container-aware
-  - `.env.example` — template completo de variáveis de ambiente
-- **23 testes unitários passando**
+- **Configuration** completa: `application.properties` (HikariCP + env vars), `application-dev.properties`, `application-test.properties`
+- **JaCoCo** — check goal: LINE ≥ 70%, BRANCH ≥ 60%, CLASS ≥ 80%
+- **Infrastructure**: `docker-compose.yml`, `Dockerfile` (multi-stage), `.env.example`
+- **Phase 1.1 — Identity Domain Layer:**
+  - `Role` enum — CUSTOMER, RESTAURANT_OWNER, DRIVER, ADMIN com `displayName`, armazenado como VARCHAR
+  - `User` entity — aggregate root, `User.create()` static factory enforces all invariants, business methods (`activate`, `deactivate`, `changeRole`, `updateName`, `updatePasswordHash`), no public setters, email normalized on create
+  - `UserNotFoundException` — extends `EntityNotFoundException` (UUID e email constructors)
+  - `UserRepository` — pure domain interface (port), sem Spring/JPA; JpaUserRepository previsto para Phase 1.3
+- **70 testes unitários passando**
 
 ### What DOES NOT exist yet (upcoming phases):
-- Phase 1: Identity/Auth context (User, JWT filter, SecurityFilterChain, /auth endpoints)
-- Phase 2-8: Todos os bounded contexts (domain + application + infrastructure + interfaces)
-- Fases 9-10: Observabilidade, Simulação Engine
+- Phase 1.2: `RegisterCommand`, `LoginCommand`, `AuthResponse`, `AuthService`, `JwtTokenProvider`
+- Phase 1.3: `JpaUserRepository`, `JwtAuthenticationFilter`, `SecurityFilterChain`, `UserDetailsServiceImpl`
+- Phase 1.4: `/api/v1/auth/register` e `/api/v1/auth/login` controllers
+- Phase 1.5: `V1__create_users_table.sql`
+- Phase 1.6: Unit + integration tests for auth flow
+- Phases 2-10: Remaining bounded contexts
 
 ---
 
@@ -88,7 +90,19 @@
 - **Decision**: PostgreSQL for all persistent data
 - **Rationale**: Rich JSON support, PostGIS potential for location data, mature ecosystem
 
-### ADR-005: Fairness as Core Business Rule
+### ADR-006: User.create() as the sole public constructor
+- **Decision**: The `User` entity has a `private` constructor. All creation goes through `User.create(email, passwordHash, name, role)`.
+- **Rationale**: The factory method is the single enforcement point for all domain invariants (non-blank fields, email format, normalized email). It's impossible to create an invalid User.
+- **Side effect**: `@NoArgsConstructor(access = PROTECTED)` is preserved for JPA only.
+
+### ADR-007: UserRepository as a pure domain port
+- **Decision**: `UserRepository` is a plain Java interface with zero framework imports (no `JpaRepository`, no Spring annotations).
+- **Rationale**: Strict DDD hexagonal port — the domain dictates the contract, infrastructure fulfills it.
+- **Implementation**: `JpaUserRepository` in `identity/infrastructure/persistence/` (Phase 1.3) extends both `UserRepository` and `JpaRepository<User, UUID>`.
+
+### ADR-008: passwordHash field name convention
+- **Decision**: The field is named `passwordHash` (not `password`) in both Java and the DB column (`password_hash`).
+- **Rationale**: Makes it explicit that only BCrypt hashes are ever stored; prevents accidental plain-text storage.
 - **Decision**: Fairness rules are DOMAIN logic, not infrastructure
 - **Rationale**: Fairness is BrekFood's competitive advantage - it belongs in the domain layer
 - **Implications**: Pricing Engine, Earnings Engine, and Dispatch Algorithm are domain services

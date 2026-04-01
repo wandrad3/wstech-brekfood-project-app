@@ -158,11 +158,10 @@
                         <exclude>**/BrekFoodApplication.class</exclude>
                         <exclude>**/infrastructure/config/**</exclude>
                         <exclude>**/interfaces/rest/GlobalExceptionHandler.class</exclude>
-                        <!-- Exclude empty skeleton bounded-context packages until implemented -->
+                        <!-- Exclude bounded-context packages not yet implemented -->
                         <exclude>**/customer/**</exclude>
                         <exclude>**/delivery/**</exclude>
                         <exclude>**/earnings/**</exclude>
-                        <exclude>**/identity/**</exclude>
                         <exclude>**/order/**</exclude>
                         <exclude>**/payment/**</exclude>
                         <exclude>**/pricing/**</exclude>
