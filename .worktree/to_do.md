@@ -1,6 +1,6 @@
 # BrekFood - TODO Tracker
 
-> Last updated: 2026-03-31 (Phase 0.2 complete)
+> Last updated: 2026-04-01 (Phase 0 COMPLETE — Épico 0 encerrado)
 > Legend: `[ ]` pending | `[~]` in progress | `[x]` done | `[!]` blocked
 
 ---
@@ -24,17 +24,17 @@
 - [x] Add H2 for lightweight dev/test profile
 
 ### 0.3 Configuration
-- [ ] Configure `application.properties` (or `.yml`) for PostgreSQL connection
-- [ ] Create `application-dev.properties` profile
+- [x] Configure `application.properties` (or `.yml`) for PostgreSQL connection — HikariCP pool + env vars
+- [x] Create `application-dev.properties` profile — verbose logging, Flyway repair, CORS dev origins
 - [x] Create `application-test.properties` profile
 - [x] Configure Flyway migration directory (`db/migration`) — `V0__baseline.sql` criado
 - [x] Configure SpringDoc OpenAPI info (title, version, description) — `OpenApiConfig`
-- [ ] Configure JaCoCo minimum coverage thresholds
+- [x] Configure JaCoCo minimum coverage thresholds — LINE 70%, BRANCH 60%, CLASS 80%
 
 ### 0.4 Infrastructure
-- [ ] Create `docker-compose.yml` with PostgreSQL 15 service
-- [ ] Create `Dockerfile` for the Spring Boot app
-- [ ] Create `.env.example` for environment variables
+- [x] Create `docker-compose.yml` with PostgreSQL 15 service — postgres + app services, healthcheck
+- [x] Create `Dockerfile` for the Spring Boot app — multi-stage, layered JAR, non-root user
+- [x] Create `.env.example` for environment variables — full variable reference template
 - [x] Setup global exception handler (`@RestControllerAdvice`) — `GlobalExceptionHandler`
 - [x] Create standardized API error response model (`ApiError`, `ApiResponse<T>`)
 - [x] Setup CORS configuration — `WebConfig`
@@ -425,5 +425,7 @@ Phase 2 (Customer)      Phase 3 (Restaurant)
 | 2026-03-31 | Created: OpenApiConfig (JWT Bearer scheme + 8 API tags), JwtProperties (validated @ConfigurationProperties) |
 | 2026-03-31 | Created: AbstractIntegrationTest (Testcontainers PostgreSQL base class) |
 | 2026-03-31 | Created: Flyway migration dir + V0__baseline.sql |
-| 2026-03-31 | 23 unit tests passing (BUILD SUCCESS) — 5 new tests for JwtProperties validation |
+| 2026-04-01 | **Phase 0.3 COMPLETE** — PostgreSQL datasource config (HikariCP), `application-dev.properties`, JaCoCo thresholds (LINE 70%, BRANCH 60%, CLASS 80%) |
+| 2026-04-01 | **Phase 0.4 COMPLETE** — `docker-compose.yml` (postgres + app + healthcheck), multi-stage `Dockerfile` (layered JAR, non-root), `.env.example` |
+| 2026-04-01 | **ÉPICO 0 COMPLETE** — 23 unit tests passing, full infrastructure ready for Phase 1 |
 

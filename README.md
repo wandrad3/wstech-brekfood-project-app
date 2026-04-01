@@ -6,10 +6,11 @@
 ![Java](https://img.shields.io/badge/Java-17-blue?logo=openjdk)
 ![Maven](https://img.shields.io/badge/Maven-3.9.x-C71A36?logo=apachemaven)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql)
-![Lombok](https://img.shields.io/badge/Lombok-latest-red)
-![JaCoCo](https://img.shields.io/badge/JaCoCo-0.8.12-yellow)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker)
+![JaCoCo](https://img.shields.io/badge/JaCoCo-70%25_line-yellow)
 ![Spring Security](https://img.shields.io/badge/Spring_Security-6.x-6DB33F?logo=springsecurity)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
+![Phase](https://img.shields.io/badge/phase-0_complete-success)
 
 ---
 
@@ -108,14 +109,14 @@ score = w1×proximity + w2×idle_time + w3×earnings_gap + w4×acceptance_probab
 | Persistence   | Spring Data JPA + PostgreSQL  | ✅ Active     |
 | Security      | Spring Security 6 + JJWT 0.12.6 | 🔜 Phase 1  |
 | Build         | Maven + mvnw                  | ✅ Active     |
-| Coverage      | JaCoCo 0.8.12                 | ✅ Active     |
+| Coverage      | JaCoCo 0.8.12 (≥70% line)    | ✅ Active     |
 | Validation    | Bean Validation (Jakarta)     | ✅ Active     |
 | DTO Mapping   | MapStruct 1.6.3               | ✅ Configured |
 | Migration     | Flyway 10.x                   | ✅ Active     |
 | API Docs      | SpringDoc OpenAPI 2.8.8       | ✅ Active     |
 | Test DB       | H2 (in-memory, test profile)  | ✅ Active     |
 | Int. Tests    | Testcontainers + PostgreSQL   | ✅ Configured |
-| Containers    | Docker + Compose              | 🔜 Phase 0.4 |
+| Containers    | Docker + Compose              | ✅ Complete   |
 
 ---
 
@@ -124,39 +125,78 @@ score = w1×proximity + w2×idle_time + w3×earnings_gap + w4×acceptance_probab
 ### Prerequisites
 
 - Java 17+
-- Maven 3.9+
-- PostgreSQL 15+ (or run with `test` profile using H2)
+- Maven 3.9+ (or use `./mvnw`)
+- Docker & Docker Compose (for full stack)
 
-### Running Tests (no database required)
+### Quick Start — Docker Compose (recommended)
 
 ```bash
-./mvnw clean test "-Dspring.profiles.active=test"
+# 1. Copy and configure environment variables
+cp .env.example .env
+# Edit .env and set DB_PASSWORD and JWT_SECRET to strong values
+
+# 2. Start everything (PostgreSQL + Spring Boot app)
+docker-compose up -d
+
+# 3. Check health
+docker-compose ps
 ```
 
-> Tests run against H2 in-memory. Flyway is disabled in the test profile.
-> Integration tests (extending `AbstractIntegrationTest`) spin up a real PostgreSQL 15 container via Testcontainers.
+- Swagger UI → http://localhost:8080/swagger-ui.html
+- OpenAPI JSON → http://localhost:8080/api-docs
 
-### API Documentation
+---
 
-With the app running, access:
-- Swagger UI: http://localhost:8080/swagger-ui.html
-- OpenAPI JSON: http://localhost:8080/api-docs
+### Run Database Only (for local development)
 
-### Running Locally
+```bash
+# Start only PostgreSQL
+docker-compose up -d postgres
 
-1. Start PostgreSQL (Docker):
-   ```bash
-   # docker-compose.yml will be added in Phase 0.4
-   docker run -e POSTGRES_DB=brekfood -e POSTGRES_USER=brekfood \
-     -e POSTGRES_PASSWORD=brekfood -p 5432:5432 postgres:15-alpine
-   ```
+# Run the app with dev profile
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
 
-2. Configure `application-dev.properties` (coming Phase 0.3)
+---
 
-3. Run:
-   ```bash
-   ./mvnw spring-boot:run "-Dspring.profiles.active=dev"
-   ```
+### Running Tests (no Docker required)
+
+```bash
+# Unit tests — H2 in-memory, no PostgreSQL needed
+./mvnw clean test -Dspring.profiles.active=test
+
+# Full verify (unit tests + JaCoCo coverage gate)
+./mvnw clean verify -Dspring.profiles.active=test
+```
+
+> **Coverage thresholds** enforced at `mvn verify`: LINE ≥ 70%, BRANCH ≥ 60%, CLASS ≥ 80%
+
+---
+
+### Build Docker Image manually
+
+```bash
+./mvnw clean package -DskipTests
+docker build -t brekfood-app:latest .
+```
+
+---
+
+### Environment Variables
+
+| Variable              | Default                             | Description                              |
+|-----------------------|-------------------------------------|------------------------------------------|
+| `DB_HOST`             | `localhost`                         | PostgreSQL hostname                      |
+| `DB_PORT`             | `5432`                              | PostgreSQL port                          |
+| `DB_NAME`             | `brekfood`                          | Database name                            |
+| `DB_USER`             | `brekfood`                          | Database user                            |
+| `DB_PASSWORD`         | `brekfood`                          | Database password (**change in prod**)   |
+| `JWT_SECRET`          | *(dev fallback)*                    | JWT signing secret (≥32 chars required)  |
+| `JWT_EXPIRATION_MS`   | `86400000` (24h)                    | Token TTL in milliseconds                |
+| `CORS_ALLOWED_ORIGINS`| `http://localhost:3000`             | Allowed CORS origins (comma-separated)   |
+| `SERVER_PORT`         | `8080`                              | Application port                         |
+
+> See `.env.example` for the full reference template.
 
 ---
 

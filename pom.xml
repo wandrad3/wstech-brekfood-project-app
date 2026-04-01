@@ -152,6 +152,23 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
+                <configuration>
+                    <!-- Exclude generated code, config classes, main app, and skeleton packages -->
+                    <excludes>
+                        <exclude>**/BrekFoodApplication.class</exclude>
+                        <exclude>**/infrastructure/config/**</exclude>
+                        <exclude>**/interfaces/rest/GlobalExceptionHandler.class</exclude>
+                        <!-- Exclude empty skeleton bounded-context packages until implemented -->
+                        <exclude>**/customer/**</exclude>
+                        <exclude>**/delivery/**</exclude>
+                        <exclude>**/earnings/**</exclude>
+                        <exclude>**/identity/**</exclude>
+                        <exclude>**/order/**</exclude>
+                        <exclude>**/payment/**</exclude>
+                        <exclude>**/pricing/**</exclude>
+                        <exclude>**/restaurant/**</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -164,6 +181,40 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <!-- Line coverage: 70% minimum -->
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.70</minimum>
+                                        </limit>
+                                        <!-- Branch coverage: 60% minimum -->
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                        <!-- Class coverage: 80% minimum -->
+                                        <limit>
+                                            <counter>CLASS</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

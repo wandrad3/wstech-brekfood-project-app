@@ -1,7 +1,7 @@
 # BrekFood - Memory & Context Document
 
-> Last updated: 2026-03-31
-> Status: **Phase 0.2 Complete — 23 tests passing, full dependency stack configured**
+> Last updated: 2026-04-01
+> Status: **Phase 0 COMPLETE (Épico 0 encerrado) — 23 tests passing, full infrastructure ready**
 
 ---
 
@@ -27,7 +27,7 @@
 
 ## 2. Current State (Snapshot)
 
-### What EXISTS today (Phase 0.2 complete):
+### What EXISTS today (Phase 0 complete — Épico 0 encerrado):
 - `BrekFoodApplication.java` — main class com `@ConfigurationPropertiesScan`
 - Full DDD package skeleton: **8 bounded contexts × 4 layers**
 - **Shared Kernel** completo:
@@ -41,14 +41,20 @@
   - `JwtProperties` — `@ConfigurationProperties` record validado com Bean Validation
 - **Flyway** configurado: `db/migration/V0__baseline.sql` criado
 - **Testcontainers**: `AbstractIntegrationTest` base class com PostgreSQL 15 container
-- `application.properties` — Flyway, SpringDoc, JWT, CORS configs
-- `application-test.properties` — H2 in-memory, Flyway desabilitado
-- **23 testes unitários passando** (5 novos: JwtProperties validação)
+- **Configuration** completa:
+  - `application.properties` — PostgreSQL datasource (HikariCP pool, env vars), Flyway, SpringDoc, JWT, CORS
+  - `application-dev.properties` — verbose logging, Flyway repair, multi-origin CORS
+  - `application-test.properties` — H2 in-memory, Flyway desabilitado
+- **JaCoCo** — check goal com LINE ≥ 70%, BRANCH ≥ 60%, CLASS ≥ 80%; exclusions para skeleton packages
+- **Infrastructure** completa:
+  - `docker-compose.yml` — serviços postgres + app com healthcheck + rede dedicada + volume persistente
+  - `Dockerfile` — multi-stage build (builder + runtime), layered JAR, non-root user, JAVA_OPTS container-aware
+  - `.env.example` — template completo de variáveis de ambiente
+- **23 testes unitários passando**
 
 ### What DOES NOT exist yet (upcoming phases):
-- Phase 0.3: `application-dev.properties`, PostgreSQL datasource config, JaCoCo thresholds
-- Phase 0.4: `docker-compose.yml`, `Dockerfile`, `.env.example`
-- Phases 1-8: Todos os bounded contexts (domain + application + infrastructure + interfaces)
+- Phase 1: Identity/Auth context (User, JWT filter, SecurityFilterChain, /auth endpoints)
+- Phase 2-8: Todos os bounded contexts (domain + application + infrastructure + interfaces)
 - Fases 9-10: Observabilidade, Simulação Engine
 
 ---
@@ -207,7 +213,7 @@ score = w1 * proximity + w2 * idle_time + w3 * earnings_gap + w4 * acceptance_pr
 | Persistence       | Spring Data JPA + PostgreSQL      | ✅ Active   |
 | Security          | Spring Security + JWT (JJWT 0.12.6) | 🔜 Phase 1 |
 | Build             | Maven + mvnw                      | ✅ Active   |
-| Coverage          | JaCoCo 0.8.12                     | ✅ Active   |
+| Coverage          | JaCoCo 0.8.12                     | ✅ Active (70/60/80% thresholds) |
 | Utility           | Lombok                            | ✅ Active   |
 | DTO Mapping       | MapStruct 1.6.3                   | ✅ Configured|
 | Validation        | Bean Validation (Jakarta)         | ✅ Active   |
@@ -215,7 +221,7 @@ score = w1 * proximity + w2 * idle_time + w3 * earnings_gap + w4 * acceptance_pr
 | Integration Tests | Testcontainers + PostgreSQL 15    | ✅ Configured|
 | Migration         | Flyway 10.x (Boot BOM)            | ✅ Active   |
 | API Docs          | SpringDoc OpenAPI 2.8.8           | ✅ Active   |
-| Containerization  | Docker + docker-compose           | 🔜 Phase 0.4|
+| Containerization  | Docker + docker-compose           | ✅ Complete (Phase 0.4) |
 
 ---
 
