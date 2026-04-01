@@ -160,41 +160,42 @@ jobs:
       - name: "☁️ Checkout source"
         uses: actions/checkout@v4
 
-      - name: "🔀 Extract branch info"
-        id: branch
+      - name: "🔀 Create or update PR to develop"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          echo "name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
 
           # Generate PR title from branch name
           # feature/phase-1.2-auth-service -> Phase 1.2 auth service
-          CLEAN_NAME=$(echo "$BRANCH_NAME" | sed 's|^[^/]*/||' | tr '-' ' ' | tr '_' ' ')
-          echo "title=${CLEAN_NAME}" >> $GITHUB_OUTPUT
+          CLEAN_TITLE=$(echo "$BRANCH_NAME" | sed 's|^[^/]*/||' | tr '-' ' ' | tr '_' ' ')
 
-      - name: "📝 Create Pull Request"
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.branch.outputs.name }}
-          base: develop
-          title: "🔀 ${{ steps.branch.outputs.title }}"
-          body: |
-            ## Auto-generated PR
+          PR_BODY="## Auto-generated PR
 
-            **Branch:** `${{ steps.branch.outputs.name }}`
-            **Target:** `develop`
+          **Branch:** \`${BRANCH_NAME}\`
+          **Target:** \`develop\`
 
-            ### ✅ CI Checks Passed
-            - [x] Build & unit tests
-            - [x] JaCoCo coverage gate (LINE ≥ 70%, BRANCH ≥ 60%, CLASS ≥ 80%)
-            - [x] SonarCloud analysis (coverage + vulnerabilities)
+          ### ✅ CI Checks Passed
+          - [x] Build & unit tests
+          - [x] JaCoCo coverage gate (LINE ≥ 70%, BRANCH ≥ 60%, CLASS ≥ 80%)
+          - [x] SonarCloud analysis (coverage + vulnerabilities)
 
-            ---
-            > _Automatically created by the BrekFood CI pipeline._
-          labels: |
-            ci/auto-pr
-            review-needed
-          draft: false
-          # Don't create duplicate PRs
-          update-existing: true
+          ---
+          > _Automatically created by the BrekFood CI pipeline._"
+
+          # Check if a PR already exists for this branch -> develop
+          EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --base develop --state open --json number --jq '.[0].number' || echo "")
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "✅ PR #${EXISTING_PR} already exists for ${BRANCH_NAME} → develop. Skipping."
+          else
+            echo "📝 Creating PR: ${BRANCH_NAME} → develop"
+            gh pr create \
+              --base develop \
+              --head "$BRANCH_NAME" \
+              --title "🔀 ${CLEAN_TITLE}" \
+              --body "$PR_BODY" \
+              --label "ci/auto-pr" \
+              --label "review-needed" || echo "⚠️ PR creation failed (branch may already be merged or develop doesn't exist yet)"
+          fi
 
