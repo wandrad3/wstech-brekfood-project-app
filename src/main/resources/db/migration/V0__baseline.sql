@@ -1,0 +1,11 @@
+-- BrekFood — Baseline Migration
+-- This file is intentionally empty.
+-- The first real migration will be V1__create_users_table.sql (Phase 1 - Identity context).
+--
+-- Flyway requires at least one migration file to be present.
+-- Naming convention: V{version}__{description}.sql
+-- Examples:
+--   V1__create_users_table.sql
+--   V2__create_customers_table.sql
+--   V3__create_restaurants_table.sql
+

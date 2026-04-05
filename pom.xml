@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.br.wstech</groupId>
-    <artifactId>wstech-base-project</artifactId>
+    <artifactId>brekfood-app</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>wstech-base-project</name>
-    <description>Projeto base para demais projetos java da wstech solutions</description>
+    <name>brekfood-app</name>
+    <description>BrekFood — Fairness-first delivery platform by WSTech Solutions</description>
     <url/>
     <licenses>
         <license/>
@@ -28,8 +28,15 @@
     </scm>
     <properties>
         <java.version>17</java.version>
+        <!-- Library versions not managed by Spring Boot BOM -->
+        <springdoc.version>2.8.8</springdoc.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
+        <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+        <jjwt.version>0.12.6</jjwt.version>
     </properties>
+
     <dependencies>
+        <!-- ===== CORE FRAMEWORK ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -42,17 +49,69 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
 
+        <!-- ===== DATABASE ===== -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- Flyway core (version managed by Spring Boot BOM) -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <!-- Flyway PostgreSQL support (Flyway 10+ modular) -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+        <!-- ===== API DOCUMENTATION ===== -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- ===== SECURITY — JWT ===== -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ===== DTO MAPPING ===== -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+
+        <!-- ===== UTILITIES ===== -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- ===== TESTING ===== -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -63,6 +122,28 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- H2 for unit/slice tests without Docker -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Testcontainers for integration tests with real PostgreSQL -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -71,6 +152,24 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.12</version>
+                <configuration>
+                    <!-- Exclude generated code, config classes, main app, and skeleton packages -->
+                    <excludes>
+                        <exclude>**/BrekFoodApplication.class</exclude>
+                        <exclude>**/shared/infrastructure/config/OpenApiConfig.class</exclude>
+                        <exclude>**/shared/infrastructure/config/WebConfig.class</exclude>
+                        <exclude>**/shared/infrastructure/config/SecurityConfig.class</exclude>
+                        <exclude>**/shared/interfaces/rest/exception/GlobalExceptionHandler.class</exclude>
+                        <!-- Exclude bounded-context packages not yet implemented -->
+                        <exclude>**/customer/**</exclude>
+                        <exclude>**/delivery/**</exclude>
+                        <exclude>**/earnings/**</exclude>
+                        <exclude>**/order/**</exclude>
+                        <exclude>**/payment/**</exclude>
+                        <exclude>**/pricing/**</exclude>
+                        <exclude>**/restaurant/**</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -84,6 +183,40 @@
                             <goal>report</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <!-- Line coverage: 70% minimum -->
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.70</minimum>
+                                        </limit>
+                                        <!-- Branch coverage: 60% minimum -->
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.60</minimum>
+                                        </limit>
+                                        <!-- Class coverage: 80% minimum -->
+                                        <limit>
+                                            <counter>CLASS</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -91,11 +224,33 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
                     <annotationProcessorPaths>
+                        <!--
+                            ORDER IS CRITICAL:
+                            1. Lombok must run first (generates getters, constructors, builders)
+                            2. lombok-mapstruct-binding coordinates between Lombok and MapStruct
+                            3. MapStruct runs last (uses the Lombok-generated methods)
+                        -->
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                         </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>${lombok-mapstruct-binding.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
                     </annotationProcessorPaths>
+                    <compilerArgs>
+                        <!-- Make MapStruct use constructor injection (Spring-compatible) -->
+                        <arg>-Amapstruct.defaultComponentModel=spring</arg>
+                        <!-- Verbose MapStruct output for diagnosing mapping issues -->
+                        <arg>-Amapstruct.verbose=false</arg>
+                    </compilerArgs>
                 </configuration>
             </plugin>
             <plugin>

@@ -1,0 +1,75 @@
+# ======================================================
+# BrekFood — Docker Compose
+# Usage:
+#   docker-compose up -d          # start all services
+#   docker-compose up -d postgres # start only the database
+#   docker-compose down -v        # stop and remove volumes
+# ======================================================
+
+name: brekfood
+
+services:
+
+  # ---- PostgreSQL 15 --------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: brekfood-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-brekfood}
+      POSTGRES_USER: ${POSTGRES_USER:-brekfood}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-brekfood}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-brekfood} -d ${POSTGRES_DB:-brekfood}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - brekfood-network
+
+  # ---- BrekFood Spring Boot App ---------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: brekfood-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SERVER_PORT: ${SERVER_PORT:-8080}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-brekfood}
+      DB_USER: ${POSTGRES_USER:-brekfood}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-brekfood}
+      JWT_SECRET: ${JWT_SECRET:-brekfood-default-dev-secret-change-in-production-min-256-bits}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    networks:
+      - brekfood-network
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  brekfood-network:
+    driver: bridge
+

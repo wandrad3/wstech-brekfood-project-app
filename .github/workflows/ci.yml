@@ -1,0 +1,222 @@
+# ======================================================
+# BrekFood — CI Pipeline
+# Triggers: push to feature/*, hotfix/*, bugfix/*
+#           pull_request to develop, main
+# Jobs:
+#   1. build      — compile + unit tests + JaCoCo coverage gate
+#   2. sonar      — SonarCloud analysis (coverage + vulnerabilities)
+#   3. create-pr  — auto-create PR to develop (on feature branch push)
+# ======================================================
+
+name: CI — Build, Test, Sonar & PR
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'hotfix/**'
+      - 'bugfix/**'
+      - 'chore/**'
+      - 'refactor/**'
+  pull_request:
+    branches:
+      - develop
+      - main
+    types: [opened, synchronize, reopened]
+
+# Cancel in-progress runs on the same branch
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '17'
+  JAVA_DISTRIBUTION: 'temurin'
+  MAVEN_OPTS: '-Xmx1024m'
+
+# ──────────────────────────────────────────────────────
+# JOBS
+# ──────────────────────────────────────────────────────
+
+jobs:
+
+  # ──────────────── 1. BUILD & TEST ────────────────
+  build:
+    name: "Build & Test"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: "☁️ Checkout source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for SonarCloud blame
+
+      - name: "☕ Setup JDK ${{ env.JAVA_VERSION }}"
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: "📦 Cache Maven packages"
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+
+      - name: "🔧 Make Maven wrapper executable"
+        run: chmod +x ./mvnw
+
+      - name: "🔨 Build & Test (verify + JaCoCo gate)"
+        run: ./mvnw clean verify -Dspring.profiles.active=test -B -q
+
+      - name: "📊 Upload JaCoCo report"
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: target/site/jacoco/
+          retention-days: 14
+
+      - name: "📋 Upload Surefire report"
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 7
+
+  # ──────────────── 2. SONAR ANALYSIS ──────────────
+  sonar:
+    name: "SonarCloud Analysis"
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 10
+    # SonarCloud only on internal branches (not from forks)
+    if: >
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+
+    steps:
+      - name: "☁️ Checkout source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "☕ Setup JDK ${{ env.JAVA_VERSION }}"
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: "📦 Cache SonarCloud packages"
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: "🔧 Make Maven wrapper executable"
+        run: chmod +x ./mvnw
+
+      - name: "🔨 Build with JaCoCo (generate coverage report)"
+        run: ./mvnw clean verify -Dspring.profiles.active=test -B -q
+
+      - name: "🔍 SonarCloud Scan"
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "$SONAR_TOKEN" ] || [ -z "$SONAR_PROJECT_KEY" ]; then
+            echo "::warning title=Sonar not configured::SONAR_TOKEN or SONAR_PROJECT_KEY is not set."
+            echo ""
+            echo "To enable SonarCloud analysis, configure in GitHub → Settings:"
+            echo "  Secrets  : SONAR_TOKEN"
+            echo "  Variables: SONAR_PROJECT_KEY, SONAR_ORGANIZATION"
+            echo ""
+            echo "See skills/skill-ci-pipeline.md section 3 for step-by-step setup."
+            exit 0
+          fi
+
+          SONAR_EXCLUSIONS="**/BrekFoodApplication.java,**/shared/infrastructure/config/OpenApiConfig.java,**/shared/infrastructure/config/WebConfig.java,**/shared/interfaces/rest/exception/GlobalExceptionHandler.java"
+          SONAR_COVERAGE_EXCLUSIONS="${SONAR_EXCLUSIONS},**/customer/**,**/delivery/**,**/earnings/**,**/order/**,**/payment/**,**/pricing/**,**/restaurant/**"
+
+          ./mvnw org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey="${SONAR_PROJECT_KEY}" \
+            -Dsonar.organization="${SONAR_ORGANIZATION}" \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.java.coveragePlugin=jacoco \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            -Dsonar.exclusions="${SONAR_EXCLUSIONS}" \
+            -Dsonar.coverage.exclusions="${SONAR_COVERAGE_EXCLUSIONS}" \
+            -Dsonar.qualitygate.wait=true \
+            -B -q
+
+  # ──────────────── 3. AUTO PR TO DEVELOP ──────────
+  create-pr:
+    name: "Create PR → develop"
+    runs-on: ubuntu-latest
+    needs: [build, sonar]
+    timeout-minutes: 5
+    # Run if: push to feature/hotfix/bugfix AND build succeeded AND sonar succeeded or was skipped
+    if: >
+      github.event_name == 'push' &&
+      needs.build.result == 'success' &&
+      (needs.sonar.result == 'success' || needs.sonar.result == 'skipped') &&
+      (startsWith(github.ref, 'refs/heads/feature/') ||
+       startsWith(github.ref, 'refs/heads/hotfix/') ||
+       startsWith(github.ref, 'refs/heads/bugfix/'))
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: "☁️ Checkout source"
+        uses: actions/checkout@v4
+
+      - name: "🔀 Create or update PR to develop"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+
+          # Generate PR title from branch name
+          # feature/phase-1.2-auth-service -> Phase 1.2 auth service
+          CLEAN_TITLE=$(echo "$BRANCH_NAME" | sed 's|^[^/]*/||' | tr '-' ' ' | tr '_' ' ')
+
+          PR_BODY="## Auto-generated PR
+
+          **Branch:** \`${BRANCH_NAME}\`
+          **Target:** \`develop\`
+
+          ### ✅ CI Checks Passed
+          - [x] Build & unit tests
+          - [x] JaCoCo coverage gate (LINE ≥ 70%, BRANCH ≥ 60%, CLASS ≥ 80%)
+          - [x] SonarCloud analysis (coverage + vulnerabilities)
+
+          ---
+          > _Automatically created by the BrekFood CI pipeline._"
+
+          # Check if a PR already exists for this branch -> develop
+          EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --base develop --state open --json number --jq '.[0].number' || echo "")
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "✅ PR #${EXISTING_PR} already exists for ${BRANCH_NAME} → develop. Skipping."
+          else
+            echo "📝 Creating PR: ${BRANCH_NAME} → develop"
+            gh pr create \
+              --base develop \
+              --head "$BRANCH_NAME" \
+              --title "🔀 ${CLEAN_TITLE}" \
+              --body "$PR_BODY" \
+              --label "ci/auto-pr" \
+              --label "review-needed" || echo "⚠️ PR creation failed (branch may already be merged or develop doesn't exist yet)"
+          fi
+
