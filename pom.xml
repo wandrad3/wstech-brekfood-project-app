@@ -157,7 +157,7 @@
                     <excludes>
                         <exclude>**/BrekFoodApplication.class</exclude>
                         <exclude>**/infrastructure/config/**</exclude>
-                        <exclude>**/interfaces/rest/GlobalExceptionHandler.class</exclude>
+                        <exclude>**/interfaces/rest/exception/GlobalExceptionHandler.class</exclude>
                         <!-- Exclude bounded-context packages not yet implemented -->
                         <exclude>**/customer/**</exclude>
                         <exclude>**/delivery/**</exclude>
