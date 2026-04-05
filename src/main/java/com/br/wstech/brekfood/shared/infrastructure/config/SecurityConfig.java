@@ -52,6 +52,26 @@ public class SecurityConfig {
             CorsConfigurationSource corsConfigurationSource) throws Exception {
 
         http
+            /*
+             * CSRF is intentionally disabled — this is safe for the following reasons:
+             *
+             * 1. STATELESS sessions: SessionCreationPolicy.STATELESS is enforced below.
+             *    The server never issues an HttpSession or a session cookie, so there is
+             *    no session-bound credential for a malicious site to piggyback on.
+             *
+             * 2. Bearer token authentication: every authenticated request must carry an
+             *    explicit `Authorization: Bearer <jwt>` header. Browsers do NOT include
+             *    custom headers in cross-origin requests without an explicit CORS pre-flight
+             *    — making CSRF structurally impossible.
+             *
+             * 3. No cookie-based auth: the API never sets authentication cookies.
+             *    CSRF exploits the browser's automatic cookie sending; without cookies
+             *    carrying credentials there is nothing to forge.
+             *
+             * References:
+             *   - OWASP CSRF Prevention Cheat Sheet (Stateless / Token-Based Apps section)
+             *   - Spring Security docs: "CSRF and REST" (recommends disabling for stateless APIs)
+             */
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(corsConfigurationSource))
             .sessionManagement(session ->
