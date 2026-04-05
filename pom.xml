@@ -158,6 +158,7 @@
                         <exclude>**/BrekFoodApplication.class</exclude>
                         <exclude>**/shared/infrastructure/config/OpenApiConfig.class</exclude>
                         <exclude>**/shared/infrastructure/config/WebConfig.class</exclude>
+                        <exclude>**/shared/infrastructure/config/SecurityConfig.class</exclude>
                         <exclude>**/shared/interfaces/rest/exception/GlobalExceptionHandler.class</exclude>
                         <!-- Exclude bounded-context packages not yet implemented -->
                         <exclude>**/customer/**</exclude>

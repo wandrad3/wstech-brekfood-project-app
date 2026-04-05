@@ -1,6 +1,6 @@
 # BrekFood - TODO Tracker
 
-> Last updated: 2026-04-01 (Phase 1.1 complete — Domain Layer: User, Role, UserRepository)
+> Last updated: 2026-04-05 (Phase 1.2 complete — Application Layer: AuthService, JwtTokenProvider, SecurityConfig)
 > Legend: `[ ]` pending | `[~]` in progress | `[x]` done | `[!]` blocked
 
 ---
@@ -50,19 +50,24 @@
 - [x] Create `UserNotFoundException` — context-specific exception, extends `EntityNotFoundException`
 
 ### 1.2 Application Layer
-- [ ] Create `RegisterCommand` (email, password, name, role)
-- [ ] Create `LoginCommand` (email, password)
-- [ ] Create `AuthResponse` DTO (token, expiresAt, user)
-- [ ] Create `AuthService` (register, login)
-- [ ] Implement JWT token generation and validation
-- [ ] Create `JwtTokenProvider` utility class
+- [x] Create `RegisterCommand` (email, password, name, role) — Jakarta Validation annotations, immutable record
+- [x] Create `LoginCommand` (email, password) — Jakarta Validation annotations, immutable record
+- [x] Create `AuthResponse` DTO (token, expiresAt, userId, email, name, roleDisplayName) — immutable record
+- [x] Create `AuthService` interface + `AuthServiceImpl` (register, login) — BCrypt + UserRepository + TokenProvider
+- [x] Implement JWT token generation and validation — `JwtTokenProvider` (JJWT 0.12.6)
+- [x] Create `JwtTokenProvider` utility class — implements `TokenProvider` port, `@PostConstruct` key init
+- [x] Create `TokenProvider` output port + `TokenDetails` record — clean hex port pattern
+- [x] Create `EmailAlreadyRegisteredException` + `InvalidCredentialsException` — domain exceptions
+- [x] Create `JwtAuthenticationFilter` (OncePerRequestFilter) — stateless JWT extraction + SecurityContext
+- [x] Create `SecurityConfig` — BCrypt bean, stateless FilterChain, public auth endpoints
+- [x] Update `GlobalExceptionHandler` — added 401 handler for `InvalidCredentialsException`
 
 ### 1.3 Infrastructure Layer
-- [ ] Implement `JpaUserRepository`
-- [ ] Create `JwtAuthenticationFilter` (OncePerRequestFilter)
-- [ ] Configure `SecurityFilterChain` (permit auth endpoints, secure rest)
+- [ ] Implement `JpaUserRepository` (Spring Data JPA adapter for UserRepository port)
+- [x] Create `JwtAuthenticationFilter` (OncePerRequestFilter) — done in Phase 1.2
+- [x] Configure `SecurityFilterChain` (permit auth endpoints, secure rest) — done in Phase 1.2
 - [ ] Create `UserDetailsServiceImpl`
-- [ ] Configure password encoding (BCrypt)
+- [x] Configure password encoding (BCrypt) — `SecurityConfig.passwordEncoder()` bean
 
 ### 1.4 Interface Layer
 - [ ] Create `POST /api/v1/auth/register` controller
@@ -74,8 +79,11 @@
 - [ ] Create `V1__create_users_table.sql`
 
 ### 1.6 Tests
-- [ ] Unit test: AuthService (register, login, duplicate email)
-- [ ] Unit test: JwtTokenProvider (generate, validate, expired)
+- [x] Unit test: AuthService (register, login, duplicate email, wrong password) — `AuthServiceImpl_Test` (5 tests)
+- [x] Unit test: JwtTokenProvider (generate, validate, expired, tampered, claims) — `JwtTokenProvider_Test` (12 tests)
+- [x] Unit test: JwtAuthenticationFilter (no header, invalid token, valid token) — `JwtAuthenticationFilter_Test` (6 tests)
+- [x] Unit test: Commands validation — `RegisterCommand_Test` (9 tests), `LoginCommand_Test` (5 tests)
+- [x] Unit test: Domain exceptions — `EmailAlreadyRegisteredException_Test`, `InvalidCredentialsException_Test`
 - [ ] Integration test: Auth endpoints (register + login flow)
 - [ ] Integration test: Security filter (protected endpoints return 401)
 
@@ -434,5 +442,9 @@ Phase 2 (Customer)      Phase 3 (Restaurant)
 | 2026-04-01 | ADR: `User.create()` static factory enforces all invariants; direct field mutation only via explicit business methods |
 | 2026-04-01 | ADR: `UserRepository` is a pure Java interface (domain port) — no Spring/JPA dependency; JpaUserRepository wired in Phase 1.3 |
 | 2026-04-01 | **CI Pipeline CREATED** — `.github/workflows/ci.yml` (build → sonar → auto-PR), `sonar-project.properties`, `skills/skill-ci-pipeline.md` |
-| 2026-04-01 | CI: 3 jobs — build+JaCoCo gate, SonarCloud (coverage + CVE + code smells), auto-create PR to develop |
+| 2026-04-05 | **Phase 1.2 COMPLETE** — `RegisterCommand`, `LoginCommand`, `AuthResponse`, `AuthService`+`AuthServiceImpl`, `JwtTokenProvider` (JJWT 0.12.6), `JwtAuthenticationFilter`, `SecurityConfig`, `EmailAlreadyRegisteredException`, `InvalidCredentialsException` |
+| 2026-04-05 | ADR: `TokenProvider` output port isolates JJWT from the application layer — `AuthServiceImpl` has zero JWT/framework imports |
+| 2026-04-05 | ADR: `SecurityConfig` in `shared/infrastructure/config` (cross-cutting) — depends on `JwtAuthenticationFilter` from identity context |
+| 2026-04-05 | ADR: `BrekFoodApplicationTests` uses `@MockBean UserRepository` until `JpaUserRepository` is implemented in Phase 1.3 |
+| 2026-04-05 | 116 unit tests passing (46 new: AuthServiceImpl×5, JwtTokenProvider×12, JwtAuthFilter×6, RegisterCommand×9, LoginCommand×5, exceptions×4, context×1+4 updated) |
 

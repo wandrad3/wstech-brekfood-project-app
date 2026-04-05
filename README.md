@@ -10,7 +10,7 @@
 ![JaCoCo](https://img.shields.io/badge/JaCoCo-70%25_line-yellow)
 ![Spring Security](https://img.shields.io/badge/Spring_Security-6.x-6DB33F?logo=springsecurity)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
-![Phase](https://img.shields.io/badge/phase-0_complete-success)
+![Phase](https://img.shields.io/badge/phase-1.2_complete-success)
 
 ---
 
@@ -107,7 +107,7 @@ score = w1×proximity + w2×idle_time + w3×earnings_gap + w4×acceptance_probab
 | Runtime       | Java 17                       | ✅ Active     |
 | Framework     | Spring Boot 3.5.5             | ✅ Active     |
 | Persistence   | Spring Data JPA + PostgreSQL  | ✅ Active     |
-| Security      | Spring Security 6 + JJWT 0.12.6 | 🔜 Phase 1  |
+| Security      | Spring Security 6 + JJWT 0.12.6 | ✅ Phase 1.2 |
 | Build         | Maven + mvnw                  | ✅ Active     |
 | Coverage      | JaCoCo 0.8.12 (≥70% line)    | ✅ Active     |
 | Validation    | Bean Validation (Jakarta)     | ✅ Active     |
@@ -259,7 +259,7 @@ Every push to `feature/**`, `hotfix/**`, or `bugfix/**` branches triggers:
 
 | Step | Job | What it does |
 |------|-----|-------------|
-| 1 | **Build & Test** | `mvn clean verify` — compiles, runs 70+ unit tests, enforces JaCoCo gate |
+| 1 | **Build & Test** | `mvn clean verify` — compiles, runs 116 unit tests, enforces JaCoCo gate |
 | 2 | **SonarCloud** | Coverage upload, bug detection, CVE vulnerability scan, code smell analysis |
 | 3 | **Auto PR** | Creates/updates a Pull Request to `develop` with CI summary |
 

@@ -1,10 +1,12 @@
 package com.br.wstech.brekfood.shared.interfaces.rest.exception;
 
+import com.br.wstech.brekfood.identity.domain.exception.InvalidCredentialsException;
 import com.br.wstech.brekfood.shared.domain.exception.BusinessRuleViolationException;
 import com.br.wstech.brekfood.shared.domain.exception.EntityNotFoundException;
 import com.br.wstech.brekfood.shared.interfaces.rest.response.ApiError;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -24,6 +26,7 @@ import java.util.List;
  * <p>Mapping:
  * <ul>
  *   <li>{@link EntityNotFoundException}            → 404 Not Found</li>
+ *   <li>{@link InvalidCredentialsException}        → 401 Unauthorized</li>
  *   <li>{@link BusinessRuleViolationException}     → 422 Unprocessable Entity</li>
  *   <li>{@link MethodArgumentNotValidException}    → 400 Bad Request (with field errors)</li>
  *   <li>{@link Exception} (fallback)               → 500 Internal Server Error</li>
@@ -49,6 +52,26 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCredentials(
+            InvalidCredentialsException ex,
+            HttpServletRequest request) {
+
+        log.warn("Authentication failed: {}", request.getRequestURI());
+
+        ApiError error = ApiError.builder()
+                .timestamp(Instant.now())
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .error("INVALID_CREDENTIALS")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+                .body(error);
     }
 
     @ExceptionHandler(BusinessRuleViolationException.class)

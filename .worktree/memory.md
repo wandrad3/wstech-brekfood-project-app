@@ -1,7 +1,7 @@
 # BrekFood - Memory & Context Document
 
-> Last updated: 2026-04-01
-> Status: **Phase 1.1 Complete — 70 tests passing, User domain layer ready**
+> Last updated: 2026-04-05
+> Status: **Phase 1.2 Complete — 116 tests passing, Auth application layer + JWT security ready**
 
 ---
 
@@ -27,36 +27,47 @@
 
 ## 2. Current State (Snapshot)
 
-### What EXISTS today (Phase 1.1 complete):
+### What EXISTS today (Phase 1.2 complete):
 - `BrekFoodApplication.java` — main class com `@ConfigurationPropertiesScan`
 - Full DDD package skeleton: **8 bounded contexts × 4 layers**
 - **Shared Kernel** completo:
   - `BaseEntity` — abstract UUID entity com JPA auditing
   - `DomainException` hierarchy — `EntityNotFoundException` (404), `BusinessRuleViolationException` (422)
   - `ApiResponse<T>` / `ApiError` + `FieldError` — envelopes padronizados
-  - `GlobalExceptionHandler` — mapeia 404/422/400/500, sem vazamento de detalhes internos
+  - `GlobalExceptionHandler` — mapeia 404/401/422/400/500, sem vazamento de detalhes internos
   - `JpaConfig` — `@EnableJpaAuditing`
   - `WebConfig` — CORS via `brekfood.cors.allowed-origins`
   - `OpenApiConfig` — SpringDoc com JWT Bearer scheme e 8 tags (uma por bounded context)
   - `JwtProperties` — `@ConfigurationProperties` record validado com Bean Validation
+  - `SecurityConfig` — BCrypt bean, stateless `SecurityFilterChain`, auth endpoints públicos
 - **Flyway** configurado: `db/migration/V0__baseline.sql` criado
 - **Testcontainers**: `AbstractIntegrationTest` base class com PostgreSQL 15 container
-- **Configuration** completa: `application.properties` (HikariCP + env vars), `application-dev.properties`, `application-test.properties`
+- **Configuration** completa: `application.properties` (HikariCP + env vars), `application-dev.properties`, `application-test.properties` (com JWT test values)
 - **JaCoCo** — check goal: LINE ≥ 70%, BRANCH ≥ 60%, CLASS ≥ 80%
 - **Infrastructure**: `docker-compose.yml`, `Dockerfile` (multi-stage), `.env.example`
 - **Phase 1.1 — Identity Domain Layer:**
   - `Role` enum — CUSTOMER, RESTAURANT_OWNER, DRIVER, ADMIN com `displayName`, armazenado como VARCHAR
-  - `User` entity — aggregate root, `User.create()` static factory enforces all invariants, business methods (`activate`, `deactivate`, `changeRole`, `updateName`, `updatePasswordHash`), no public setters, email normalized on create
-  - `UserNotFoundException` — extends `EntityNotFoundException` (UUID e email constructors)
-  - `UserRepository` — pure domain interface (port), sem Spring/JPA; JpaUserRepository previsto para Phase 1.3
-- **70 testes unitários passando**
+  - `User` entity — aggregate root, `User.create()` static factory enforces all invariants
+  - `UserNotFoundException` — extends `EntityNotFoundException`
+  - `UserRepository` — pure domain interface (port), sem Spring/JPA
+- **Phase 1.2 — Identity Application Layer + Security:**
+  - `RegisterCommand` / `LoginCommand` — records imutáveis com Jakarta Validation
+  - `AuthResponse` — DTO record (token, expiresAt, userId, email, name, roleDisplayName)
+  - `TokenProvider` — output port interface (hexagonal arch)
+  - `TokenDetails` — record (token, expiresAt)
+  - `AuthService` — interface de use case
+  - `AuthServiceImpl` — implementação: `existsByEmail → encode → User.create → save → generateToken`
+  - `EmailAlreadyRegisteredException` — extends `BusinessRuleViolationException` (422)
+  - `InvalidCredentialsException` — extends `DomainException` (401, mensagem vaga, anti-enumeration)
+  - `JwtTokenProvider` — implements `TokenProvider`, JJWT 0.12.6, `@PostConstruct` key init
+  - `JwtAuthenticationFilter` — `OncePerRequestFilter`, extrai Bearer token, popula `SecurityContextHolder`
+- **116 testes unitários passando**
 
 ### What DOES NOT exist yet (upcoming phases):
-- Phase 1.2: `RegisterCommand`, `LoginCommand`, `AuthResponse`, `AuthService`, `JwtTokenProvider`
-- Phase 1.3: `JpaUserRepository`, `JwtAuthenticationFilter`, `SecurityFilterChain`, `UserDetailsServiceImpl`
+- Phase 1.3: `JpaUserRepository`, `UserDetailsServiceImpl`
 - Phase 1.4: `/api/v1/auth/register` e `/api/v1/auth/login` controllers
 - Phase 1.5: `V1__create_users_table.sql`
-- Phase 1.6: Unit + integration tests for auth flow
+- Phase 1.6: Integration tests for auth flow
 - Phases 2-10: Remaining bounded contexts
 
 ---
@@ -100,7 +111,23 @@
 - **Rationale**: Strict DDD hexagonal port — the domain dictates the contract, infrastructure fulfills it.
 - **Implementation**: `JpaUserRepository` in `identity/infrastructure/persistence/` (Phase 1.3) extends both `UserRepository` and `JpaRepository<User, UUID>`.
 
-### ADR-008: passwordHash field name convention
+### ADR-009: TokenProvider output port isolates JWT infrastructure
+- **Decision**: `AuthServiceImpl` depends only on the `TokenProvider` interface (application layer). `JwtTokenProvider` (JJWT-specific) lives in `infrastructure/security/`.
+- **Rationale**: The application layer has zero JJWT or framework imports. Swapping the JWT library requires only a new `TokenProvider` implementation — no service changes.
+- **Port**: `identity/application/port/out/TokenProvider` + `TokenDetails` record.
+
+### ADR-010: SecurityConfig in shared/infrastructure/config
+- **Decision**: `SecurityConfig` is placed in the shared kernel (`shared/infrastructure/config/`) rather than inside the identity context.
+- **Rationale**: Security is a cross-cutting concern. The filter chain governs ALL contexts, not just identity. Placing it in identity would create an upstream dependency on identity from all contexts.
+- **Tradeoff**: `SecurityConfig` imports `JwtAuthenticationFilter` from the identity context — this is an accepted dependency direction (shared → identity).
+
+### ADR-011: BrekFoodApplicationTests uses @MockBean UserRepository
+- **Decision**: `BrekFoodApplicationTests` declares `@MockBean UserRepository` to satisfy `AuthServiceImpl`'s dependency until Phase 1.3 delivers `JpaUserRepository`.
+- **Rationale**: The smoke test must keep loading the full context; mocking one unimplemented dependency is cleaner than excluding the context test or using `@SpringBootTest(webEnvironment=NONE)`.
+
+### ADR-012: UUID injection via reflection in unit tests
+- **Decision**: Tests that need a non-null `User.getId()` inject a UUID via `BaseEntity.id` reflection (`Field.setAccessible(true)`).
+- **Rationale**: JPA `@GeneratedValue(strategy = UUID)` only fires during persistence — unavailable in pure unit tests. Reflection avoids adding a `setId()` method or test-only constructor to the production domain entity.
 - **Decision**: The field is named `passwordHash` (not `password`) in both Java and the DB column (`password_hash`).
 - **Rationale**: Makes it explicit that only BCrypt hashes are ever stored; prevents accidental plain-text storage.
 - **Decision**: Fairness rules are DOMAIN logic, not infrastructure
@@ -225,7 +252,7 @@ score = w1 * proximity + w2 * idle_time + w3 * earnings_gap + w4 * acceptance_pr
 | Runtime           | Java 17                           | ✅ Active   |
 | Framework         | Spring Boot 3.5.5                 | ✅ Active   |
 | Persistence       | Spring Data JPA + PostgreSQL      | ✅ Active   |
-| Security          | Spring Security + JWT (JJWT 0.12.6) | 🔜 Phase 1 |
+| Security          | Spring Security + JWT (JJWT 0.12.6) | ✅ Phase 1.2 |
 | Build             | Maven + mvnw                      | ✅ Active   |
 | Coverage          | JaCoCo 0.8.12                     | ✅ Active (70/60/80% thresholds) |
 | Utility           | Lombok                            | ✅ Active   |
