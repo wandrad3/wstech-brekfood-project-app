@@ -156,8 +156,9 @@
                     <!-- Exclude generated code, config classes, main app, and skeleton packages -->
                     <excludes>
                         <exclude>**/BrekFoodApplication.class</exclude>
-                        <exclude>**/infrastructure/config/**</exclude>
-                        <exclude>**/interfaces/rest/exception/GlobalExceptionHandler.class</exclude>
+                        <exclude>**/shared/infrastructure/config/OpenApiConfig.class</exclude>
+                        <exclude>**/shared/infrastructure/config/WebConfig.class</exclude>
+                        <exclude>**/shared/interfaces/rest/exception/GlobalExceptionHandler.class</exclude>
                         <!-- Exclude bounded-context packages not yet implemented -->
                         <exclude>**/customer/**</exclude>
                         <exclude>**/delivery/**</exclude>
