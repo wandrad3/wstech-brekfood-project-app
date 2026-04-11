@@ -1,6 +1,6 @@
 # BrekFood - TODO Tracker
 
-> Last updated: 2026-04-05 (Phase 1.2 complete — Application Layer: AuthService, JwtTokenProvider, SecurityConfig)
+> Last updated: 2026-04-11 (Phase 1.3–1.6 complete — Infrastructure Layer, Auth Controller, DB Migration, Integration Tests)
 > Legend: `[ ]` pending | `[~]` in progress | `[x]` done | `[!]` blocked
 
 ---
@@ -63,20 +63,21 @@
 - [x] Update `GlobalExceptionHandler` — added 401 handler for `InvalidCredentialsException`
 
 ### 1.3 Infrastructure Layer
-- [ ] Implement `JpaUserRepository` (Spring Data JPA adapter for UserRepository port)
+- [x] Implement `JpaUserRepository` (Spring Data JPA adapter for UserRepository port)
+- [x] Implement `SpringDataUserJpaRepository` (package-private Spring Data interface)
 - [x] Create `JwtAuthenticationFilter` (OncePerRequestFilter) — done in Phase 1.2
 - [x] Configure `SecurityFilterChain` (permit auth endpoints, secure rest) — done in Phase 1.2
-- [ ] Create `UserDetailsServiceImpl`
+- [x] Create `UserDetailsServiceImpl`
 - [x] Configure password encoding (BCrypt) — `SecurityConfig.passwordEncoder()` bean
 
 ### 1.4 Interface Layer
-- [ ] Create `POST /api/v1/auth/register` controller
-- [ ] Create `POST /api/v1/auth/login` controller
-- [ ] Add request validation annotations
-- [ ] Add OpenAPI annotations
+- [x] Create `POST /api/v1/auth/register` controller
+- [x] Create `POST /api/v1/auth/login` controller
+- [x] Add request validation annotations
+- [x] Add OpenAPI annotations
 
 ### 1.5 Database Migration
-- [ ] Create `V1__create_users_table.sql`
+- [x] Create `V1__create_users_table.sql`
 
 ### 1.6 Tests
 - [x] Unit test: AuthService (register, login, duplicate email, wrong password) — `AuthServiceImpl_Test` (5 tests)
@@ -84,8 +85,11 @@
 - [x] Unit test: JwtAuthenticationFilter (no header, invalid token, valid token) — `JwtAuthenticationFilter_Test` (6 tests)
 - [x] Unit test: Commands validation — `RegisterCommand_Test` (9 tests), `LoginCommand_Test` (5 tests)
 - [x] Unit test: Domain exceptions — `EmailAlreadyRegisteredException_Test`, `InvalidCredentialsException_Test`
-- [ ] Integration test: Auth endpoints (register + login flow)
-- [ ] Integration test: Security filter (protected endpoints return 401)
+- [x] Unit test: JpaUserRepository (save, findById, findByEmail, existsByEmail) — `JpaUserRepository_Test` (8 tests, @DataJpaTest with H2)
+- [x] Unit test: UserDetailsServiceImpl (authority mapping, active/inactive flags) — `UserDetailsServiceImpl_Test` (8 tests)
+- [x] Unit test: AuthController (request validation, HTTP status codes) — `AuthController_Test` (8 tests, @WebMvcTest)
+- [x] Integration test: Auth endpoints (register + login flow) — `AuthControllerIntegration_Test` (Testcontainers + PostgreSQL 15)
+- [x] Integration test: Security filter (protected endpoints return 401)
 
 ---
 

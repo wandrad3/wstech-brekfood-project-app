@@ -1,7 +1,7 @@
 # BrekFood - Memory & Context Document
 
-> Last updated: 2026-04-05
-> Status: **Phase 1.2 Complete — 116 tests passing, Auth application layer + JWT security ready**
+> Last updated: 2026-04-11
+> Status: **Phase 1.3–1.6 Complete — 152 tests passing, full auth stack (JpaUserRepository, UserDetailsServiceImpl, AuthController, V1 migration, integration tests)**
 
 ---
 
@@ -27,7 +27,7 @@
 
 ## 2. Current State (Snapshot)
 
-### What EXISTS today (Phase 1.2 complete):
+### What EXISTS today (Phase 1.3–1.6 complete):
 - `BrekFoodApplication.java` — main class com `@ConfigurationPropertiesScan`
 - Full DDD package skeleton: **8 bounded contexts × 4 layers**
 - **Shared Kernel** completo:
@@ -40,7 +40,7 @@
   - `OpenApiConfig` — SpringDoc com JWT Bearer scheme e 8 tags (uma por bounded context)
   - `JwtProperties` — `@ConfigurationProperties` record validado com Bean Validation
   - `SecurityConfig` — BCrypt bean, stateless `SecurityFilterChain`, auth endpoints públicos
-- **Flyway** configurado: `db/migration/V0__baseline.sql` criado
+- **Flyway** configurado: `db/migration/V0__baseline.sql` + `V1__create_users_table.sql`
 - **Testcontainers**: `AbstractIntegrationTest` base class com PostgreSQL 15 container
 - **Configuration** completa: `application.properties` (HikariCP + env vars), `application-dev.properties`, `application-test.properties` (com JWT test values)
 - **JaCoCo** — check goal: LINE ≥ 70%, BRANCH ≥ 60%, CLASS ≥ 80%
@@ -61,14 +61,23 @@
   - `InvalidCredentialsException` — extends `DomainException` (401, mensagem vaga, anti-enumeration)
   - `JwtTokenProvider` — implements `TokenProvider`, JJWT 0.12.6, `@PostConstruct` key init
   - `JwtAuthenticationFilter` — `OncePerRequestFilter`, extrai Bearer token, popula `SecurityContextHolder`
-- **116 testes unitários passando**
+- **Phase 1.3 — Identity Infrastructure Layer:**
+  - `SpringDataUserJpaRepository` — package-private Spring Data JPA interface (`findByEmail`, `existsByEmail`)
+  - `JpaUserRepository` — `@Repository` adapter implementing `UserRepository` domain port; delegates all calls to `SpringDataUserJpaRepository`
+  - `UserDetailsServiceImpl` — `@Service` implementing Spring Security `UserDetailsService`; maps `User` → `UserDetails` with `ROLE_` prefix; propagates `active` flag as lock/disable
+- **Phase 1.4 — Identity Interface Layer:**
+  - `AuthController` — `@RestController` at `/api/v1/auth`; `POST /register` (201) + `POST /login` (200); full OpenAPI annotations; `@Valid` request bodies; delegates to `AuthService`
+- **Phase 1.5 — Database Migration:**
+  - `V1__create_users_table.sql` — `users` table with UUID PK, unique email, BCrypt hash, role CHECK constraint, indexes, column comments
+- **Phase 1.6 — Tests (complete):**
+  - `JpaUserRepository_Test` — 8 tests: `@DataJpaTest` + H2 + `@Import(JpaConfig)`: save, findById, findByEmail, existsByEmail
+  - `UserDetailsServiceImpl_Test` — 8 tests: authority mapping (all 4 roles), active/inactive flags, UsernameNotFoundException
+  - `AuthController_Test` — 8 tests: `@WebMvcTest` slice; request validation, HTTP status codes, exception mapping
+  - `AuthControllerIntegration_Test` — 7 tests: Testcontainers + PostgreSQL 15; register→login flow, duplicate email, wrong password, JWT security filter
+- **152 tests passing (unit + integration)**
 
 ### What DOES NOT exist yet (upcoming phases):
-- Phase 1.3: `JpaUserRepository`, `UserDetailsServiceImpl`
-- Phase 1.4: `/api/v1/auth/register` e `/api/v1/auth/login` controllers
-- Phase 1.5: `V1__create_users_table.sql`
-- Phase 1.6: Integration tests for auth flow
-- Phases 2-10: Remaining bounded contexts
+- Phases 2-10: Remaining bounded contexts (Customer, Restaurant, Order, Pricing, Delivery, Earnings, Payment)
 
 ---
 

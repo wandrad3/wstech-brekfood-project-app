@@ -1,0 +1,833 @@
+{
+  "info": {
+    "_postman_id": "bf000001-brek-f00d-api1-000000000001",
+    "name": "BrekFood API — Epic 1 (Identity & Auth)",
+    "description": "Manual test collection for the BrekFood platform.\n\n**Base URL** is controlled by the `{{base_url}}` variable (default: `http://localhost:8080`).\n\nThe **happy-path register and login** requests automatically save the JWT token to the `jwt_token` collection variable, which is used as Bearer auth by all protected-endpoint requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string",
+      "description": "Change to your deployed host when testing non-local environments."
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string",
+      "description": "Populated automatically by the register / login happy-path tests."
+    },
+    {
+      "key": "registered_email",
+      "value": "",
+      "type": "string",
+      "description": "Populated automatically after a successful register request."
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔓 Auth — Register",
+      "description": "Public endpoint: POST /api/v1/auth/register\n\nAccepts: { email, password (min 8), name (max 100), role }\nReturns: 201 + { data: AuthResponse }",
+      "item": [
+        {
+          "name": "[201] Register as Customer (happy path)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201 Created', () => pm.response.to.have.status(201));",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test('response has data wrapper', () => pm.expect(json).to.have.property('data'));",
+                  "pm.test('data has token', () => pm.expect(json.data.token).to.be.a('string').and.not.empty);",
+                  "pm.test('data has userId', () => pm.expect(json.data.userId).to.match(/^[0-9a-f-]{36}$/i));",
+                  "pm.test('data has email', () => pm.expect(json.data.email).to.eql(pm.variables.get('_reg_email')));",
+                  "pm.test('data has name', () => pm.expect(json.data.name).to.be.a('string').and.not.empty);",
+                  "pm.test('data has roleDisplayName', () => pm.expect(json.data.roleDisplayName).to.eql('Customer'));",
+                  "pm.test('data has expiresAt', () => pm.expect(json.data.expiresAt).to.be.a('string').and.not.empty);",
+                  "",
+                  "// Persist token for subsequent requests",
+                  "pm.collectionVariables.set('jwt_token', json.data.token);",
+                  "pm.collectionVariables.set('registered_email', json.data.email);",
+                  "console.log('✅ JWT saved:', json.data.token.substring(0, 30) + '...');"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Use a timestamp to avoid duplicate-email conflicts on repeated runs",
+                  "const ts = Date.now();",
+                  "pm.variables.set('_reg_email', `customer_${ts}@brekfood.com`);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{_reg_email}}\",\n  \"password\": \"Passw0rd!\",\n  \"name\": \"Alice Customer\",\n  \"role\": \"CUSTOMER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Registers a new CUSTOMER. Saves the JWT to `jwt_token` for use in protected-endpoint tests."
+          }
+        },
+        {
+          "name": "[201] Register as Restaurant Owner",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('roleDisplayName is Restaurant Owner', () =>",
+                  "  pm.expect(pm.response.json().data.roleDisplayName).to.eql('Restaurant Owner'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": ["pm.variables.set('_reg_email', `owner_${Date.now()}@brekfood.com`);"],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{_reg_email}}\",\n  \"password\": \"Passw0rd!\",\n  \"name\": \"Bob Owner\",\n  \"role\": \"RESTAURANT_OWNER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "[201] Register as Driver",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('roleDisplayName is Driver', () =>",
+                  "  pm.expect(pm.response.json().data.roleDisplayName).to.eql('Driver'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": ["pm.variables.set('_reg_email', `driver_${Date.now()}@brekfood.com`);"],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{_reg_email}}\",\n  \"password\": \"Passw0rd!\",\n  \"name\": \"Carlos Driver\",\n  \"role\": \"DRIVER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "[201] Register as Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 201', () => pm.response.to.have.status(201));",
+                  "pm.test('roleDisplayName is Admin', () =>",
+                  "  pm.expect(pm.response.json().data.roleDisplayName).to.eql('Admin'));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": ["pm.variables.set('_reg_email', `admin_${Date.now()}@brekfood.com`);"],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{_reg_email}}\",\n  \"password\": \"Passw0rd!\",\n  \"name\": \"Diana Admin\",\n  \"role\": \"ADMIN\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "[422] Register — duplicate email",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": ["pm.variables.set('_dup_email', `dup_${Date.now()}@brekfood.com`);"],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// This request is the SECOND call — the folder pre-request registers first.",
+                  "// Expected: 422 Unprocessable Entity",
+                  "pm.test('status is 422', () => pm.response.to.have.status(422));",
+                  "pm.test('error is BUSINESS_RULE_VIOLATION', () =>",
+                  "  pm.expect(pm.response.json().error).to.eql('BUSINESS_RULE_VIOLATION'));",
+                  "pm.test('message mentions the email', () =>",
+                  "  pm.expect(pm.response.json().message).to.include('already registered'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"duplicate@brekfood.com\",\n  \"password\": \"Passw0rd!\",\n  \"name\": \"Duplicate User\",\n  \"role\": \"CUSTOMER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "⚠️ Run the [201] Register as Customer request first, then register with the **same email** to trigger 422.\n\nEdit the email below to match the one you registered."
+          }
+        },
+        {
+          "name": "[400] Validation — blank email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('error is VALIDATION_FAILED', () =>",
+                  "  pm.expect(pm.response.json().error).to.eql('VALIDATION_FAILED'));",
+                  "pm.test('fieldErrors contains email', () => {",
+                  "  const fields = pm.response.json().fieldErrors.map(f => f.field);",
+                  "  pm.expect(fields).to.include('email');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"\",\n  \"password\": \"Passw0rd!\",\n  \"name\": \"Alice\",\n  \"role\": \"CUSTOMER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "[400] Validation — invalid email format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('fieldErrors contains email', () => {",
+                  "  const fields = pm.response.json().fieldErrors.map(f => f.field);",
+                  "  pm.expect(fields).to.include('email');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"not-a-valid-email\",\n  \"password\": \"Passw0rd!\",\n  \"name\": \"Alice\",\n  \"role\": \"CUSTOMER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "[400] Validation — password too short (< 8 chars)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('fieldErrors contains password', () => {",
+                  "  const fields = pm.response.json().fieldErrors.map(f => f.field);",
+                  "  pm.expect(fields).to.include('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@brekfood.com\",\n  \"password\": \"short\",\n  \"name\": \"Alice\",\n  \"role\": \"CUSTOMER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "[400] Validation — blank name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('fieldErrors contains name', () => {",
+                  "  const fields = pm.response.json().fieldErrors.map(f => f.field);",
+                  "  pm.expect(fields).to.include('name');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@brekfood.com\",\n  \"password\": \"Passw0rd!\",\n  \"name\": \"\",\n  \"role\": \"CUSTOMER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "[400] Validation — null role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('fieldErrors contains role', () => {",
+                  "  const fields = pm.response.json().fieldErrors.map(f => f.field);",
+                  "  pm.expect(fields).to.include('role');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@brekfood.com\",\n  \"password\": \"Passw0rd!\",\n  \"name\": \"Alice\",\n  \"role\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "[400] Validation — invalid role value",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "console.log('Response:', pm.response.text());"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@brekfood.com\",\n  \"password\": \"Passw0rd!\",\n  \"name\": \"Alice\",\n  \"role\": \"SUPERUSER\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            },
+            "description": "Sending an unknown role value. Jackson deserialization should fail with 400."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔓 Auth — Login",
+      "description": "Public endpoint: POST /api/v1/auth/login\n\nAccepts: { email, password }\nReturns: 200 + { data: AuthResponse }",
+      "item": [
+        {
+          "name": "[200] Login — valid credentials (happy path)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Make sure you have already registered the user below.",
+                  "// Tip: run '🔓 Auth — Register > [201] Register as Customer' first."
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200 OK', () => pm.response.to.have.status(200));",
+                  "",
+                  "const json = pm.response.json();",
+                  "",
+                  "pm.test('response has data wrapper', () => pm.expect(json).to.have.property('data'));",
+                  "pm.test('data has token', () => pm.expect(json.data.token).to.be.a('string').and.not.empty);",
+                  "pm.test('data has userId', () => pm.expect(json.data.userId).to.match(/^[0-9a-f-]{36}$/i));",
+                  "pm.test('data has email', () => pm.expect(json.data.email).to.be.a('string').and.not.empty);",
+                  "pm.test('data has expiresAt', () => pm.expect(json.data.expiresAt).to.be.a('string').and.not.empty);",
+                  "",
+                  "// Refresh the stored token",
+                  "pm.collectionVariables.set('jwt_token', json.data.token);",
+                  "pm.collectionVariables.set('registered_email', json.data.email);",
+                  "console.log('✅ JWT refreshed:', json.data.token.substring(0, 30) + '...');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registered_email}}\",\n  \"password\": \"Passw0rd!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Uses `{{registered_email}}` saved by the register happy-path request.\n\nRefreshes `jwt_token` collection variable on success."
+          }
+        },
+        {
+          "name": "[401] Login — wrong password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 401', () => pm.response.to.have.status(401));",
+                  "pm.test('error is INVALID_CREDENTIALS', () =>",
+                  "  pm.expect(pm.response.json().error).to.eql('INVALID_CREDENTIALS'));",
+                  "pm.test('WWW-Authenticate header is present', () =>",
+                  "  pm.expect(pm.response.headers.get('WWW-Authenticate')).to.include('Bearer'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registered_email}}\",\n  \"password\": \"WRONG_PASSWORD\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "[401] Login — unknown email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 401', () => pm.response.to.have.status(401));",
+                  "pm.test('error is INVALID_CREDENTIALS', () =>",
+                  "  pm.expect(pm.response.json().error).to.eql('INVALID_CREDENTIALS'));",
+                  "pm.test('message is intentionally vague (anti-enumeration)', () =>",
+                  "  pm.expect(pm.response.json().message).to.not.include('not found'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nobody@doesnotexist.com\",\n  \"password\": \"Passw0rd!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "The API must return 401 with a generic message (not 404) to prevent user enumeration."
+          }
+        },
+        {
+          "name": "[400] Validation — blank email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('fieldErrors contains email', () => {",
+                  "  const fields = pm.response.json().fieldErrors.map(f => f.field);",
+                  "  pm.expect(fields).to.include('email');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"\",\n  \"password\": \"Passw0rd!\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "[400] Validation — blank password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 400', () => pm.response.to.have.status(400));",
+                  "pm.test('fieldErrors contains password', () => {",
+                  "  const fields = pm.response.json().fieldErrors.map(f => f.field);",
+                  "  pm.expect(fields).to.include('password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@brekfood.com\",\n  \"password\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔒 Security — Protected Endpoints",
+      "description": "These requests hit `/api/v1/customers/me` (not yet implemented) to verify security filter behaviour.\n\n- **No token / bad token** → must return **401**\n- **Valid token** → filter passes, endpoint returns **404** (not yet built — proves the JWT was accepted)",
+      "item": [
+        {
+          "name": "[401] No token — unauthenticated request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 401 Unauthorized', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "me"]
+            },
+            "description": "Request with no Authorization header. Must return 401 (not 403)."
+          }
+        },
+        {
+          "name": "[401] Malformed Bearer token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "totally.invalid.jwt.token", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "me"]
+            }
+          }
+        },
+        {
+          "name": "[401] Tampered JWT signature",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 401', () => pm.response.to.have.status(401));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0YW1wZXJlZEB0ZXN0LmNvbSJ9.INVALIDSIGNATUREXXXXXXXXXXXXXXXXXXX", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "me"]
+            }
+          }
+        },
+        {
+          "name": "[404] Valid token passes security filter",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "if (!pm.collectionVariables.get('jwt_token')) {",
+                  "  console.warn('⚠️ jwt_token is empty — run a register or login request first!');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 404 (not 401/403) proves the JWT filter let the request through.",
+                  "// The endpoint itself doesn't exist yet — that's expected.",
+                  "pm.test('status is 404 — filter passed, endpoint not yet implemented', () =>",
+                  "  pm.response.to.have.status(404));",
+                  "pm.test('error is NOT_FOUND', () =>",
+                  "  pm.expect(pm.response.json().error).to.eql('NOT_FOUND'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{jwt_token}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customers/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customers", "me"]
+            },
+            "description": "Uses `{{jwt_token}}` saved by a previous register/login call.\n\nExpects **404** (not 401/403) — the JWT filter accepted the token and forwarded the request to the controller layer, but no `GET /customers/me` controller exists yet."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 API Docs",
+      "description": "OpenAPI / Swagger UI endpoints (public, no auth required).",
+      "item": [
+        {
+          "name": "Swagger UI",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["pm.test('status is 200 or 302', () => pm.expect([200, 302]).to.include(pm.response.code));"],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/swagger-ui.html",
+              "host": ["{{base_url}}"],
+              "path": ["swagger-ui.html"]
+            }
+          }
+        },
+        {
+          "name": "OpenAPI JSON spec",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('status is 200', () => pm.response.to.have.status(200));",
+                  "pm.test('has openapi version', () =>",
+                  "  pm.expect(pm.response.json()).to.have.property('openapi'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api-docs",
+              "host": ["{{base_url}}"],
+              "path": ["api-docs"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
+

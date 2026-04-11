@@ -1,10 +1,8 @@
 package com.br.wstech.brekfood;
 
-import com.br.wstech.brekfood.identity.domain.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 
 /**
@@ -13,17 +11,16 @@ import org.springframework.test.context.ActiveProfiles;
  * <p>This is the most fundamental test in the suite. If this fails,
  * no other test will be meaningful.
  *
- * <p>{@code UserRepository} is mocked here because the JPA implementation
- * ({@code JpaUserRepository}) is created in Phase 1.3. The mock is enough
- * to satisfy the dependency graph and boot the context.
+ * <p>As of Phase 1.3, {@code JpaUserRepository} is fully implemented and
+ * satisfies the {@code UserRepository} domain port — no mock is needed.
+ * The test profile uses H2 in-memory with Hibernate {@code create-drop}
+ * so no PostgreSQL instance is required.
  */
 @SpringBootTest
 @ActiveProfiles("test")
 @DisplayName("BrekFood Application Context")
 class BrekFoodApplicationTests {
 
-    @MockBean
-    UserRepository userRepository;
 
     @Test
     @DisplayName("should load application context without errors")
