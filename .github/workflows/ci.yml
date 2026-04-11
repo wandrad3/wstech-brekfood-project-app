@@ -1,11 +1,11 @@
 # ======================================================
 # BrekFood — CI Pipeline
-# Triggers: push to feature/*, hotfix/*, bugfix/*
+# Triggers: push to feature/*, hotfix/*, bugfix/*, copilot/*
 #           pull_request to develop, main
 # Jobs:
 #   1. build      — compile + unit tests + JaCoCo coverage gate
 #   2. sonar      — SonarCloud analysis (coverage + vulnerabilities)
-#   3. create-pr  — auto-create PR to develop (on feature branch push)
+#   3. create-pr  — auto-create PR to develop (on feature/copilot branch push)
 # ======================================================
 
 name: CI — Build, Test, Sonar & PR
@@ -18,6 +18,7 @@ on:
       - 'bugfix/**'
       - 'chore/**'
       - 'refactor/**'
+      - 'copilot/**'
   pull_request:
     branches:
       - develop
@@ -171,7 +172,8 @@ jobs:
       (needs.sonar.result == 'success' || needs.sonar.result == 'skipped') &&
       (startsWith(github.ref, 'refs/heads/feature/') ||
        startsWith(github.ref, 'refs/heads/hotfix/') ||
-       startsWith(github.ref, 'refs/heads/bugfix/'))
+       startsWith(github.ref, 'refs/heads/bugfix/') ||
+       startsWith(github.ref, 'refs/heads/copilot/'))
 
     permissions:
       contents: read
