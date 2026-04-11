@@ -4,7 +4,11 @@
 > 23 unit tests passing | PostgreSQL + Docker infrastructure ready | JaCoCo coverage thresholds configured
 > **Phase 1.1 Status: ✅ COMPLETE (2026-04-01)**
 > 70 unit tests passing | User aggregate root, Role enum, UserRepository (domain port), UserNotFoundException
-> **Next: Phase 1.2 — Application Layer (RegisterCommand, AuthService, JwtTokenProvider)**
+> **Phase 1.2 Status: ✅ COMPLETE (2026-04-05)**
+> 116 unit tests passing | RegisterCommand, AuthService, JwtTokenProvider, SecurityConfig, JwtAuthenticationFilter
+> **Phase 1.3–1.6 Status: ✅ COMPLETE (2026-04-11)**
+> 152 tests passing | JpaUserRepository, UserDetailsServiceImpl, AuthController, V1 migration, integration tests
+> **Next: Phase 2 — Customer Context (Customer entity, Address VO, GET/PUT /customers/me)**
 
 ---
 
@@ -575,3 +579,20 @@ This is the foundation of a competitive BrekFood platform.
 | sonar      | After build (not forks)       | SonarCloud: coverage, bugs, CVEs, code smells   | Quality Gate not met              |
 | create-pr  | Push on feature/hotfix/bugfix | Creates/updates PR → develop with CI summary    | N/A (informational)               |
 
+
+## 14. Phase 1.3–1.6 Completion Summary
+
+### Delivered (2026-04-11)
+
+| Artifact                              | Package                                                   | Key Decisions                                                                 |
+|---------------------------------------|-----------------------------------------------------------|-------------------------------------------------------------------------------|
+| `SpringDataUserJpaRepository.java`    | `identity.infrastructure.persistence`                     | Package-private interface extending `JpaRepository<User, UUID>`; only `findByEmail` + `existsByEmail` added |
+| `JpaUserRepository.java`              | `identity.infrastructure.persistence`                     | `@Repository` adapter; implements domain `UserRepository` port; no business logic; delegates all calls to Spring Data repo |
+| `UserDetailsServiceImpl.java`         | `identity.infrastructure.security`                        | Implements `UserDetailsService`; loads by email; authority = `ROLE_<ROLE_NAME>`; `active=false` → locked + disabled |
+| `AuthController.java`                 | `identity.interfaces.rest`                                | `POST /api/v1/auth/register` (201) + `POST /api/v1/auth/login` (200); `@Valid`; OpenAPI annotations; delegates to `AuthService` |
+| `V1__create_users_table.sql`          | `resources/db/migration`                                  | UUID PK, unique email, BCrypt hash column, role CHECK constraint, 3 indexes, column comments |
+| `JpaUserRepository_Test.java`         | test `identity.infrastructure.persistence`                | 8 tests: `@DataJpaTest` + H2 slice + `@Import(JpaConfig)`; covers save/findById/findByEmail/existsByEmail |
+| `UserDetailsServiceImpl_Test.java`    | test `identity.infrastructure.security`                   | 8 tests: all 4 roles, active vs inactive user, UsernameNotFoundException     |
+| `AuthController_Test.java`            | test `identity.interfaces.rest`                           | 8 tests: `@WebMvcTest` slice; request validation errors, 201/200/400/401/422 |
+| `AuthControllerIntegration_Test.java` | test `identity.interfaces.rest`                           | 7 tests: Testcontainers PostgreSQL 15; full register→login→JWT→protected flow |
+| **Tests total**                       | —                                                         | **152 tests passing (unit + integration), JaCoCo coverage gate satisfied**   |

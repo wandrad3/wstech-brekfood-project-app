@@ -3,6 +3,9 @@ package com.br.wstech.brekfood.shared.infrastructure.config;
 import com.br.wstech.brekfood.identity.infrastructure.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -11,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 
@@ -80,9 +84,30 @@ public class SecurityConfig {
                     .requestMatchers(PUBLIC_PATHS).permitAll()
                     .anyRequest().authenticated()
             )
+            .exceptionHandling(ex -> ex
+                    .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+            )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Exposes the Spring Security {@link AuthenticationManager} as a bean.
+     *
+     * <p>Spring auto-configures a {@code DaoAuthenticationProvider} when a
+     * {@link org.springframework.security.core.userdetails.UserDetailsService} bean
+     * is present (our {@code UserDetailsServiceImpl}).  This bean is available for
+     * future use cases that require programmatic authentication
+     * (e.g., token-refresh endpoints, admin impersonation).
+     *
+     * @param config auto-injected {@link AuthenticationConfiguration}
+     * @return the configured {@link AuthenticationManager}
+     */
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
+            throws Exception {
+        return config.getAuthenticationManager();
     }
 }
 
